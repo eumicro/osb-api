@@ -100,18 +100,19 @@ podman machine start
 
 Compose services (Postgres, Keycloak, n8n, Gitea) keep working under rootless or rootful.
 
-Realtest offerings (Flyway `V7`/`V8`) and clients:
+Realtest offerings (Flyway `V7`/`V8`/`V14`) and clients:
 
 | Offering | Client | What provision does | Dashboard URL |
 | --- | --- | --- | --- |
 | `git-file-store` | `git-demo-templates` (Gitea) | Commit `Test-<instanceId>.txt` | Gitea file in `osb/git-demo-templates` |
 | `redis-cache` | `k8s-local-dev` (Kind) | Apply Redis + Redis Commander + Ingress in namespace `<instanceId>` | `http://redis-ui-<instanceId>.localhost:8088/` (Kind ingress-nginx; host 8088→80) |
 | `keycloak-realm` | `http-keycloak-admin` | Create realm `osb-<instanceId>` with realm-admin user (`adminUsername` / `adminPassword` / `adminPasswordTemporary`) | `http://localhost:8180/admin/osb-<instanceId>/console/` — login with provisioned credentials; temporary password forces change on first login |
+| `osb-platform` | `k8s-local-dev` (Kind) | Apply Postgres + `osb-api` + `osb-bff` (GHCR, param `image_tag`) + Ingress in namespace `<instanceId>` | `http://osb-ui-<instanceId>.localhost:8088/` — nested Admin UI (`no-auth`). Ensure GHCR images are pullable (public package or `kind load`). |
 
 `kind-up.sh` creates SA `osb-broker` and writes its Bearer token into `kubernetes_client_instances.k8s-local-dev` (and `kind/osb-broker.token`).
 OSB does not assume a local kubeconfig — only the configured API URL + auth.
 
-After changing Flyway seeds (V2–V8), recreate the Postgres volume so migrations re-apply cleanly (from repo root):
+After changing Flyway seeds, recreate the Postgres volume so migrations re-apply cleanly (from repo root):
 
 ```bash
 cd osb-devservices && docker compose --env-file .env down -v && cd .. && ./osb-devservices/scripts/up.sh

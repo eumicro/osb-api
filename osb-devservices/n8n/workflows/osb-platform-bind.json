@@ -1,0 +1,84 @@
+{
+  "id": "osbWfOsbBind",
+  "name": "OSB Platform Bind",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-platform-bind",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfOsbBind",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-platform-bind"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-osb-platform-bind",
+        "clientId": "k8s-local-dev"
+      },
+      "id": "ClientosbWfOsbBind",
+      "name": "OSB Kubernetes",
+      "type": "CUSTOM.osbKubernetes",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'BIND', operationId: $json.operationId, scenario: 'osb-platform', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfOsbBind",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Kubernetes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Kubernetes": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
