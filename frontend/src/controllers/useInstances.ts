@@ -14,8 +14,8 @@ import {
 } from "../stores/workspace";
 import { useAsyncAction } from "./useAsyncAction";
 
-const DEPROVISION_POLL_MS = 800;
-const DEPROVISION_POLL_MAX = 60;
+const OPERATION_POLL_MS = 800;
+const OPERATION_POLL_MAX = 90;
 
 /** Controller: Service-Instance-Liste (optional serverseitig paginiert). */
 export function useInstances(options: { paged?: boolean } = {}) {
@@ -60,11 +60,17 @@ export function useInstances(options: { paged?: boolean } = {}) {
     request: ProvisionInstanceRequest,
   ): Promise<ServiceInstance | undefined> {
     const saved = await run(() => instanceService.provision(request));
-    if (saved) {
-      notifyInstancesChanged();
-      await load();
-      selectInstance(saved.id, saved);
+    if (!saved) {
+      return undefined;
     }
+    // Do not block on last-operation / ready — UI polls in the background.
+    notifyInstancesChanged();
+    selectInstance(saved.id, saved);
+    void load();
+    void waitUntilProvisionSettled(saved.id, saved).then(() => {
+      notifyInstancesChanged();
+      void load();
+    });
     return saved;
   }
 
@@ -80,6 +86,28 @@ export function useInstances(options: { paged?: boolean } = {}) {
     }
   }
 
+  async function waitUntilProvisionSettled(id: string, initial: ServiceInstance) {
+    let current = initial;
+    patchLocal(current);
+    notifyInstancesChanged();
+
+    if (!isInstanceBusy(current) || current.state === "failed") {
+      return current;
+    }
+
+    for (let i = 0; i < OPERATION_POLL_MAX; i++) {
+      await new Promise((resolve) => setTimeout(resolve, OPERATION_POLL_MS));
+      const next = await instanceService.get(id);
+      current = next;
+      patchLocal(next);
+      notifyInstancesChanged();
+      if (!isInstanceBusy(next) || next.state === "failed" || next.state === "succeeded") {
+        return next;
+      }
+    }
+    return current;
+  }
+
   async function waitUntilDeprovisionSettled(id: string, initial: ServiceInstance) {
     let current = initial;
     patchLocal(current);
@@ -89,8 +117,8 @@ export function useInstances(options: { paged?: boolean } = {}) {
       return current;
     }
 
-    for (let i = 0; i < DEPROVISION_POLL_MAX; i++) {
-      await new Promise((resolve) => setTimeout(resolve, DEPROVISION_POLL_MS));
+    for (let i = 0; i < OPERATION_POLL_MAX; i++) {
+      await new Promise((resolve) => setTimeout(resolve, OPERATION_POLL_MS));
       try {
         const next = await instanceService.get(id);
         current = next;

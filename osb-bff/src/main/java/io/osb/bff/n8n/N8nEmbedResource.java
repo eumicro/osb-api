@@ -16,6 +16,10 @@ import org.eclipse.microprofile.jwt.JsonWebToken;
 /**
  * Propagates the BFF Keycloak session into n8n via a short-lived bridge ticket.
  * Iframe loads this same-origin endpoint (session cookie works), then redirects to n8n.
+ *
+ * {@code osb.bff.n8n.base-url} is the browser-facing n8n origin (e.g. {@code http://localhost:5678}).
+ * Do not use Compose-internal DNS ({@code http://n8n:5678}) — the redirect is followed by the
+ * browser, not by the BFF container.
  */
 @Path("/bff/n8n-embed")
 public class N8nEmbedResource {

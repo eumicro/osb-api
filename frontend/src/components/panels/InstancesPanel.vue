@@ -69,9 +69,9 @@ async function onRemove(instanceId: string) {
 }
 
 async function onCreate(request: ProvisionInstanceRequest) {
+  createDialogOpen.value = false;
   const saved = await create(request);
   if (saved) {
-    createDialogOpen.value = false;
     applyInstanceSelection(saved, catalogs.value, platforms.value);
     focusPanel("instance");
   }

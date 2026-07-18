@@ -12,6 +12,7 @@ import io.osb.workflow.WorkflowStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,98 @@ public class N8nWorkflowInvoker {
 
         String operationId = "n8n-" + kind.name().toLowerCase() + "-"
                 + UUID.randomUUID().toString().substring(0, 8);
+
+        if (!n8nSettings.invokeWebhooks()) {
+            operationStore.put(operationId, WorkflowStatus.IN_PROGRESS);
+            return operationId;
+        }
+
+        try {
+            String responseBody = postWebhook(definition, kind, operationId, commandJsonObject);
+            if (isExplicitFailure(responseBody)) {
+                operationStore.put(operationId, WorkflowStatus.FAILED);
+            } else {
+                // Status comes from the workflow response (`state`), not from Java heuristics.
+                applyWorkflowReportedStatus(
+                        kind, operationId, serviceId, commandJsonObject, responseBody);
+            }
+        } catch (RuntimeException ex) {
+            operationStore.put(operationId, WorkflowStatus.FAILED);
+        }
+        return operationId;
+    }
+
+    public WorkflowStatus status(String operationId) {
+        N8nOperationStore.Entry entry = operationStore.getEntry(operationId);
+        if (entry == null) {
+            return WorkflowStatus.FAILED;
+        }
+        if (entry.status() != WorkflowStatus.IN_PROGRESS || !entry.pollLastOperation()) {
+            return entry.status();
+        }
+        return refreshViaLastOperation(operationId, entry);
+    }
+
+    public String dashboardUrl(String operationId) {
+        return operationStore.dashboardUrl(operationId);
+    }
+
+    private WorkflowStatus refreshViaLastOperation(
+            String operationId, N8nOperationStore.Entry entry) {
+        try {
+            WorkflowDefinition lastOp = workflowDefinitionRepository
+                    .findEnabledByKind(WorkflowKind.INSTANCE_LAST_OPERATION, entry.serviceId())
+                    .orElse(null);
+            if (lastOp == null) {
+                return WorkflowStatus.IN_PROGRESS;
+            }
+            String responseBody = postWebhook(
+                    lastOp,
+                    WorkflowKind.INSTANCE_LAST_OPERATION,
+                    operationId,
+                    entry.commandJson());
+            if (isExplicitFailure(responseBody)) {
+                operationStore.put(operationId, WorkflowStatus.FAILED, entry.dashboardUrl());
+                return WorkflowStatus.FAILED;
+            }
+            WorkflowStatus next = readOperationState(responseBody);
+            if (next == WorkflowStatus.IN_PROGRESS) {
+                return WorkflowStatus.IN_PROGRESS;
+            }
+            operationStore.put(operationId, next, entry.dashboardUrl());
+            return next;
+        } catch (RuntimeException ex) {
+            // Transient poll errors must not flip the UI to failed while pods are still starting.
+            return WorkflowStatus.IN_PROGRESS;
+        }
+    }
+
+    private void applyWorkflowReportedStatus(
+            WorkflowKind kind,
+            String operationId,
+            String serviceId,
+            String commandJsonObject,
+            String responseBody) {
+        String dashboardUrl = readDashboardUrl(responseBody);
+        WorkflowStatus reported = readOperationState(responseBody);
+        if (reported == WorkflowStatus.FAILED) {
+            operationStore.put(operationId, WorkflowStatus.FAILED, dashboardUrl);
+            return;
+        }
+        if (reported == WorkflowStatus.IN_PROGRESS && kind == WorkflowKind.PROVISION) {
+            // Provision workflow declared async completion via last-operation.
+            operationStore.putPendingProvision(
+                    operationId, dashboardUrl, serviceId, commandJsonObject);
+            return;
+        }
+        operationStore.put(operationId, reported, dashboardUrl);
+    }
+
+    private String postWebhook(
+            WorkflowDefinition definition,
+            WorkflowKind kind,
+            String operationId,
+            String commandJsonObject) {
         String clientsJson = definition.clients().stream()
                 .map(client -> "\"" + client.name() + "\"")
                 .collect(Collectors.joining(","));
@@ -83,36 +176,11 @@ public class N8nWorkflowInvoker {
                 + "\"command\":" + (commandJsonObject == null ? "{}" : commandJsonObject)
                 + "}";
 
-        if (!n8nSettings.invokeWebhooks()) {
-            operationStore.put(operationId, WorkflowStatus.IN_PROGRESS);
-            return operationId;
-        }
-
         String base = n8nSettings.baseUrl().endsWith("/")
                 ? n8nSettings.baseUrl().substring(0, n8nSettings.baseUrl().length() - 1)
                 : n8nSettings.baseUrl();
-        String url = base + definition.n8nWebhookPath();
-        try {
-            // Seed webhooks use responseMode=responseNode → POST waits until workflow finishes.
-            String responseBody = httpClientNetworkPort.postJson(url, payload);
-            if (isExplicitFailure(responseBody)) {
-                operationStore.put(operationId, WorkflowStatus.FAILED);
-            } else {
-                operationStore.put(
-                        operationId, WorkflowStatus.SUCCEEDED, readDashboardUrl(responseBody));
-            }
-        } catch (RuntimeException ex) {
-            operationStore.put(operationId, WorkflowStatus.FAILED);
-        }
-        return operationId;
-    }
-
-    public WorkflowStatus status(String operationId) {
-        return operationStore.get(operationId);
-    }
-
-    public String dashboardUrl(String operationId) {
-        return operationStore.dashboardUrl(operationId);
+        // Seed webhooks use responseMode=responseNode → POST waits until workflow finishes.
+        return httpClientNetworkPort.postJson(base + definition.n8nWebhookPath(), payload);
     }
 
     /** Workflow may return {@code {"ok":false,...}} with HTTP 200. */
@@ -138,6 +206,35 @@ public class N8nWorkflowInvoker {
         }
         String value = node.asText().trim();
         return value.isEmpty() ? null : value;
+    }
+
+    /**
+     * Maps workflow webhook JSON {@code state} to a {@link WorkflowStatus}. Missing {@code state}
+     * means the workflow finished synchronously ({@link WorkflowStatus#SUCCEEDED}).
+     */
+    static WorkflowStatus readOperationState(String responseBody) {
+        JsonNode root = parseJson(responseBody);
+        if (root == null) {
+            return WorkflowStatus.SUCCEEDED;
+        }
+        JsonNode stateNode = root.get("state");
+        if (stateNode == null || stateNode.isNull() || !stateNode.isTextual()) {
+            return WorkflowStatus.SUCCEEDED;
+        }
+        return mapState(stateNode.asText());
+    }
+
+    private static WorkflowStatus mapState(String raw) {
+        if (raw == null || raw.isBlank()) {
+            return WorkflowStatus.IN_PROGRESS;
+        }
+        String state = raw.trim().toLowerCase(Locale.ROOT).replace('_', ' ');
+        return switch (state) {
+            case "failed", "failure", "error" -> WorkflowStatus.FAILED;
+            case "succeeded", "success", "done" -> WorkflowStatus.SUCCEEDED;
+            case "in progress", "progressing" -> WorkflowStatus.IN_PROGRESS;
+            default -> WorkflowStatus.IN_PROGRESS;
+        };
     }
 
     private static JsonNode parseJson(String responseBody) {

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import io.osb.workflow.WorkflowStatus;
 import org.junit.jupiter.api.Test;
 
 class N8nWorkflowInvokerTest {
@@ -27,5 +28,26 @@ class N8nWorkflowInvokerTest {
         assertTrue(N8nWorkflowInvoker.isExplicitFailure("{\"ok\":false,\"message\":\"x\"}"));
         assertFalse(N8nWorkflowInvoker.isExplicitFailure("{\"ok\":true}"));
         assertFalse(N8nWorkflowInvoker.isExplicitFailure("{}"));
+    }
+
+    @Test
+    void readsExplicitWorkflowState() {
+        assertEquals(
+                WorkflowStatus.IN_PROGRESS,
+                N8nWorkflowInvoker.readOperationState(
+                        "{\"ok\":true,\"state\":\"in progress\"}"));
+        assertEquals(
+                WorkflowStatus.SUCCEEDED,
+                N8nWorkflowInvoker.readOperationState("{\"ok\":true,\"state\":\"succeeded\"}"));
+        assertEquals(
+                WorkflowStatus.FAILED,
+                N8nWorkflowInvoker.readOperationState("{\"ok\":true,\"state\":\"failed\"}"));
+    }
+
+    @Test
+    void missingStateMeansSynchronousSuccess() {
+        assertEquals(
+                WorkflowStatus.SUCCEEDED,
+                N8nWorkflowInvoker.readOperationState("{\"ok\":true,\"scenario\":\"git\"}"));
     }
 }

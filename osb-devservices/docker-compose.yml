@@ -180,7 +180,8 @@ services:
       OSB_POSTGRES_USERNAME: ${POSTGRES_USER:-osb}
       OSB_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-osb}
       OSB_BFF_API_URL: http://osb-api:8080
-      OSB_BFF_N8N_BASE_URL: http://n8n:5678
+      # Browser-facing n8n URL for iframe redirects (not Compose-internal DNS).
+      OSB_BFF_N8N_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678}
       # OIDC: container backchannel via service DNS; browser redirects via localhost:8180
       QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/osb
       QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/osb

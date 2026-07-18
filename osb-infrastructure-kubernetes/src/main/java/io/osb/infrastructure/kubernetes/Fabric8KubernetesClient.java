@@ -177,8 +177,13 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
             List<HasMetadata> resources,
             KubernetesClientInstance instance) {
         StringBuilder found = new StringBuilder();
+        boolean allReady = true;
         for (HasMetadata resource : resources) {
             HasMetadata current = client.resource(resource).inNamespace(namespace).get();
+            String label = KubernetesResourceReadiness.label(current);
+            if (!"ready".equals(label)) {
+                allReady = false;
+            }
             if (found.length() > 0) {
                 found.append(',');
             }
@@ -186,13 +191,13 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
                     .append('/')
                     .append(resource.getMetadata().getName())
                     .append('=')
-                    .append(current != null);
+                    .append(label);
         }
         return ClientCommandResult.success(
                 "KUBERNETES",
                 "get",
                 "get in " + namespace + ": " + found,
-                details(instance, namespace, found.toString(), "get"));
+                details(instance, namespace, found.toString(), "get", allReady));
     }
 
     /**
@@ -254,17 +259,32 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
 
     private static String details(
             KubernetesClientInstance instance, String namespace, String resources, String result) {
-        return "{\"clientId\":\""
-                + escape(instance.id())
-                + "\",\"apiServerUrl\":\""
-                + escape(instance.apiServerUrl())
-                + "\",\"namespace\":\""
-                + escape(namespace)
-                + "\",\"resources\":\""
-                + escape(resources)
-                + "\",\"result\":\""
-                + escape(result)
-                + "\",\"adapter\":\"fabric8\"}";
+        return details(instance, namespace, resources, result, null);
+    }
+
+    private static String details(
+            KubernetesClientInstance instance,
+            String namespace,
+            String resources,
+            String result,
+            Boolean ready) {
+        StringBuilder json = new StringBuilder();
+        json.append("{\"clientId\":\"")
+                .append(escape(instance.id()))
+                .append("\",\"apiServerUrl\":\"")
+                .append(escape(instance.apiServerUrl()))
+                .append("\",\"namespace\":\"")
+                .append(escape(namespace))
+                .append("\",\"resources\":\"")
+                .append(escape(resources))
+                .append("\",\"result\":\"")
+                .append(escape(result))
+                .append('"');
+        if (ready != null) {
+            json.append(",\"ready\":").append(ready.booleanValue());
+        }
+        json.append(",\"adapter\":\"fabric8\"}");
+        return json.toString();
     }
 
     private static String normalize(String action) {
