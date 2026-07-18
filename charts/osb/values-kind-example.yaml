@@ -1,10 +1,10 @@
 # Example overrides for a Kind / in-cluster dogfood namespace where
 # Postgres, Keycloak, and n8n are already running (e.g. same cluster or via ExternalName).
 #
-#   helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+#   helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.1 \
 #     -n osb --create-namespace -f charts/osb/values-kind-example.yaml
 
-imageTag: "0.1.0"
+imageTag: "0.1.1"
 
 ingress:
   enabled: true

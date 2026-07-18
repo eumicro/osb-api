@@ -77,16 +77,16 @@ with generated notes (+ image URLs), publishes GHCR images, then bumps SNAPSHOT
 ## Pull published images / Helm chart
 
 ```bash
-docker pull ghcr.io/eumicro/osb-api/osb-api:0.1.0
-docker pull ghcr.io/eumicro/osb-api/osb-bff:0.1.0
+docker pull ghcr.io/eumicro/osb-api/osb-api:0.1.1
+docker pull ghcr.io/eumicro/osb-api/osb-bff:0.1.1
 
-helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.1 \
   -n osb --create-namespace \
   -f charts/osb/values-kind-example.yaml
 
 cd osb-devservices
-OSB_API_IMAGE=ghcr.io/eumicro/osb-api/osb-api:0.1.0 \
-OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.0 \
+OSB_API_IMAGE=ghcr.io/eumicro/osb-api/osb-api:0.1.1 \
+OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.1 \
   docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --wait
 ```
 
@@ -98,7 +98,7 @@ Chart source: [`charts/osb`](../charts/osb). Details: [`charts/osb/README.md`](.
 2. Ensure Actions can open PRs (setting above).
 3. Wait for / dispatch **Release Please** → merge the release PR (first version defaults toward `0.1.0` via `initial-version`).
 4. Confirm GitHub Release notes and GHCR packages.
-5. Optionally set package visibility to **public** under GitHub → Packages.
+5. Confirm GHCR packages stay **public** (`osb-api`, `osb-bff`, Helm `osb`) under GitHub → Packages (anonymous pull).
 
 ## Branch & tag protection
 

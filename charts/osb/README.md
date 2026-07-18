@@ -5,24 +5,20 @@ Deploys **osb-api** and **osb-bff** (Admin UI) to Kubernetes. Images and this ch
 ## Install from GHCR (OCI)
 
 ```bash
-helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.1 \
   --namespace osb --create-namespace \
   --set config.postgres.password=osb \
   --set config.n8n.clientToken=osb-n8n-client-dev-secret \
   --set config.n8n.bridgeSecret=osb-n8n-bridge-dev-secret
 ```
 
-Private packages:
-
-```bash
-echo "$GITHUB_TOKEN" | helm registry login ghcr.io -u USERNAME --password-stdin
-```
+Images and the OCI chart are **public** on GHCR — no registry login for pull.
 
 ## Local install (from repo)
 
 ```bash
 helm upgrade --install osb ./charts/osb -n osb --create-namespace \
-  --set imageTag=0.1.0 \
+  --set imageTag=0.1.1 \
   --set config.postgres.jdbcUrl=jdbc:postgresql://postgres.osb.svc:5432/osb \
   --set config.postgres.password=osb
 ```
