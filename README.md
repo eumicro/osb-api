@@ -2,6 +2,50 @@
 
 Open Service Broker API with a management UI — modular Clean Architecture on **Quarkus** (Java 25) and **Vue 3**.
 
+![Demo: workspace Views (Standard, Instances, Templates, Workflows) and osb-platform lifecycle](./docs/demo.gif)
+
+### Typical configuration (happy path)
+
+Configure the broker once — then platforms (or operators in the Admin UI) provision instances. The demo above walks the same building blocks in the workspace.
+
+```mermaid
+flowchart LR
+  start([Start]) --> pc[Platform-Client]
+  pc --> cat[Catalog]
+  cat --> off[Offering + Plans]
+  off --> wf[Workflows]
+  wf --> tpl[Template]
+  tpl --> disc[Discover Catalog]
+  disc --> prov[Provision Instance]
+  prov --> poll[Last Operation]
+  poll --> ready([Ready])
+
+  subgraph operator [Operator: configure once]
+    direction LR
+    pc
+    cat
+    off
+    wf
+    tpl
+  end
+
+  subgraph runtime [Platform or Operator: use]
+    direction LR
+    disc
+    prov
+    poll
+  end
+```
+
+| Building block | Role in the flow |
+| --- | --- |
+| **Platform-Client** | Identity & credentials for a platform talking to the broker |
+| **Catalog** | Published surface the client is allowed to see |
+| **Offering / Plans** | The service product and its plan variants (schemas, bindable, …) |
+| **Workflows** | n8n automation for lifecycle steps (especially async last-op) |
+| **Template** | Wires offering/plans to workflows and infra clients (Git / K8s / HTTP) |
+| **Instance** | Concrete provisioned service — status follows workflow `state` |
+
 The broker exposes the [Open Service Broker API](https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md) surface to platforms and an Admin API for catalogs, offerings, plans, instances, workflows, and infrastructure clients. Provisioning is orchestrated via **n8n** and adapters for **Git**, **Kubernetes**, and **HTTP**.
 
 Architecture documentation: [`docs/arc42.md`](docs/arc42.md).
@@ -229,7 +273,7 @@ docker build -f osb-api/src/main/docker/Dockerfile.jvm -t osb-api ./osb-api
 docker build -f osb-bff/src/main/docker/Dockerfile.jvm -t osb-bff ./osb-bff
 ```
 
-Pull / Compose dogfood (no local Maven image build):
+Pull / Compose from GHCR (no local Maven image build):
 
 ```bash
 docker pull ghcr.io/eumicro/osb-api/osb-api:latest
@@ -247,10 +291,24 @@ If packages are private, `docker login ghcr.io` with a PAT that has `read:packag
 | Doc | Description |
 | --- | --- |
 | [`docs/arc42.md`](docs/arc42.md) | Architecture (goals, context, building blocks, runtime, ADRs) |
+| [`docs/demo.gif`](docs/demo.gif) | Admin UI user-journey demo (regenerate below); configuration activity diagram follows the GIF in this README |
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Release Please, notes, SemVer, GHCR |
 | [`CHANGELOG.md`](CHANGELOG.md) | Generated release history |
 | [`charts/osb/README.md`](charts/osb/README.md) | Helm chart (OCI on GHCR) |
 | [`osb-devservices/README.md`](osb-devservices/README.md) | Local infrastructure, Kind, Gitea, realtest seeds |
+
+### Regenerate the README demo GIF
+
+With the Compose stack (and Kind for `osb-platform`) running:
+
+```bash
+cd frontend
+npm install
+npx playwright install chromium
+npm run demo:gif
+```
+
+This records a calm tour: Views menu + Panels menu (read-only), then your existing Views (Standard → Templates → Workflows → Instances) with list + detail, then `osb-platform` provision/deprovision into [`docs/demo.gif`](docs/demo.gif). The script never creates views or panels.
 
 ## License
 

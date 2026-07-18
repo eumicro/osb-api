@@ -37,7 +37,7 @@
     {
       "parameters": {
         "respondWith": "json",
-        "responseBody": "={{ { ok: true, kind: 'PROVISION', operationId: $json.operationId, scenario: 'kc', dashboardUrl: 'http://localhost:8180/admin/osb-' + $json.command.instanceId + '/console/', last: $json.clientResult } }}",
+        "responseBody": "={{ { ok: true, kind: 'PROVISION', operationId: $json.operationId, state: 'succeeded', scenario: 'kc', dashboardUrl: 'http://localhost:8180/admin/osb-' + $json.command.instanceId + '/console/', last: $json.clientResult } }}",
         "options": {}
       },
       "id": "RespondosbWfKcProvision",
