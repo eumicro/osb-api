@@ -1,0 +1,104 @@
+{{- if .Values.api.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osb.api.fullname" . }}
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: api
+spec:
+  replicas: {{ .Values.api.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "osb.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: api
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "osb.labels" . | nindent 8 }}
+        app.kubernetes.io/component: api
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "osb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: osb-api
+          securityContext:
+            {{- toYaml .Values.containerSecurityContext | nindent 12 }}
+          image: {{ include "osb.api.image" . }}
+          imagePullPolicy: {{ .Values.api.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          env:
+            {{- if .Values.config.quarkusProfile }}
+            - name: QUARKUS_PROFILE
+              value: {{ .Values.config.quarkusProfile | quote }}
+            {{- end }}
+            - name: OSB_POSTGRES_JDBC_URL
+              value: {{ .Values.config.postgres.jdbcUrl | quote }}
+            - name: OSB_POSTGRES_USERNAME
+              value: {{ .Values.config.postgres.username | quote }}
+            - name: OSB_N8N_BASE_URL
+              value: {{ .Values.config.n8n.baseUrl | quote }}
+            - name: OSB_KEYCLOAK_URL
+              value: {{ .Values.config.keycloak.url | quote }}
+            - name: OSB_KEYCLOAK_REALM
+              value: {{ .Values.config.keycloak.realm | quote }}
+            {{- range $k, $v := .Values.api.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          envFrom:
+            {{- if or .Values.config.postgres.password .Values.config.n8n.clientToken .Values.config.n8n.bridgeSecret }}
+            - secretRef:
+                name: {{ include "osb.fullname" . }}-credentials
+            {{- end }}
+            {{- if .Values.api.existingSecret }}
+            - secretRef:
+                name: {{ .Values.api.existingSecret }}
+            {{- end }}
+            {{- if .Values.api.existingConfigMap }}
+            - configMapRef:
+                name: {{ .Values.api.existingConfigMap }}
+            {{- end }}
+          livenessProbe:
+            httpGet:
+              path: /q/health/live
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /q/health/ready
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 5
+          resources:
+            {{- toYaml .Values.api.resources | nindent 12 }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

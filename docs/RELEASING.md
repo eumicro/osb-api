@@ -14,6 +14,7 @@ and **GitHub Releases** + **GHCR** for artifacts. Commit messages should follow
 | Maven version | all `pom.xml` (then next `*-SNAPSHOT`) |
 | UI version | `frontend/package.json` |
 | Container images | `ghcr.io/eumicro/osb-api/osb-api:X.Y.Z` and `.../osb-bff:X.Y.Z` (+ `latest` from `main`) |
+| Helm chart (OCI) | `oci://ghcr.io/eumicro/osb-api/osb` version `X.Y.Z` |
 
 ## Conventional Commits → SemVer
 
@@ -41,8 +42,8 @@ chore: bump quarkus platform
    - `.release-please-manifest.json` update
 3. Review and merge the release PR.
 4. Release Please creates the GitHub Release (`vX.Y.Z`) and release notes.
-5. Job **Publish release images** builds/pushes GHCR images for that tag
-   (same workflow call — required because `GITHUB_TOKEN` tag events do not chain).
+5. Jobs **Publish release images** and **Publish Helm chart** push GHCR images and the
+   OCI Helm chart for that tag (`workflow_call` — `GITHUB_TOKEN` tag events do not chain).
 6. A follow-up **SNAPSHOT** PR may appear (`X.Y.Z+1-SNAPSHOT`) for Maven; merge it.
 
 Trigger manually anytime: Actions → **Release Please** → Run workflow.
@@ -73,17 +74,23 @@ This bumps versions, updates `CHANGELOG.md`, tags `vX.Y.Z`, creates a GitHub Rel
 with generated notes (+ image URLs), publishes GHCR images, then bumps SNAPSHOT
 (unless skipped). Prefer Release Please when possible so notes stay consistent.
 
-## Pull published images
+## Pull published images / Helm chart
 
 ```bash
 docker pull ghcr.io/eumicro/osb-api/osb-api:0.1.0
 docker pull ghcr.io/eumicro/osb-api/osb-bff:0.1.0
+
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+  -n osb --create-namespace \
+  -f charts/osb/values-kind-example.yaml
 
 cd osb-devservices
 OSB_API_IMAGE=ghcr.io/eumicro/osb-api/osb-api:0.1.0 \
 OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.0 \
   docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --wait
 ```
+
+Chart source: [`charts/osb`](../charts/osb). Details: [`charts/osb/README.md`](../charts/osb/README.md).
 
 ## First release checklist
 

@@ -196,15 +196,26 @@ Release process (Conventional Commits → changelog → GitHub Release → GHCR)
 
 | Workflow | Role |
 | --- | --- |
-| [Release Please](.github/workflows/release-please.yml) | Release PR, `CHANGELOG.md`, GitHub Release notes, then image publish |
-| [Manual Release](.github/workflows/release-manual.yml) | Escape hatch: version input → tag + notes + images |
+| [Release Please](.github/workflows/release-please.yml) | Release PR, `CHANGELOG.md`, GitHub Release notes, then image + Helm publish |
+| [Manual Release](.github/workflows/release-manual.yml) | Escape hatch: version input → tag + notes + images + chart |
 | [Container Images](.github/workflows/container-images.yml) | JVM images to GHCR (`main` → `latest`; release tags → SemVer) |
+| [Helm Chart](.github/workflows/helm.yml) | Lint/template; on release push OCI chart to GHCR |
 
-Published images:
+Published artifacts:
 
 ```text
 ghcr.io/eumicro/osb-api/osb-api:<tag>
 ghcr.io/eumicro/osb-api/osb-bff:<tag>
+oci://ghcr.io/eumicro/osb-api/osb:<chart-version>
+```
+
+Helm (Kubernetes dogfood):
+
+```bash
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+  -n osb --create-namespace \
+  --set config.postgres.password=osb
+# see charts/osb/README.md and values-kind-example.yaml
 ```
 
 Local JVM image build:
@@ -237,6 +248,7 @@ If packages are private, `docker login ghcr.io` with a PAT that has `read:packag
 | [`docs/arc42.md`](docs/arc42.md) | Architecture (goals, context, building blocks, runtime, ADRs) |
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Release Please, notes, SemVer, GHCR |
 | [`CHANGELOG.md`](CHANGELOG.md) | Generated release history |
+| [`charts/osb/README.md`](charts/osb/README.md) | Helm chart (OCI on GHCR) |
 | [`osb-devservices/README.md`](osb-devservices/README.md) | Local infrastructure, Kind, Gitea, realtest seeds |
 
 ## License

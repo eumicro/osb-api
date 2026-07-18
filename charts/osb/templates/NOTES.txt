@@ -1,0 +1,35 @@
+OSB {{ .Chart.AppVersion }} installed as release "{{ .Release.Name }}".
+
+Components:
+{{- if .Values.api.enabled }}
+  API : {{ include "osb.api.fullname" . }}:{{ .Values.api.service.port }}
+{{- end }}
+{{- if .Values.bff.enabled }}
+  BFF : {{ include "osb.bff.fullname" . }}:{{ .Values.bff.service.port }}
+{{- end }}
+
+Images:
+{{- if .Values.api.enabled }}
+  {{ include "osb.api.image" . }}
+{{- end }}
+{{- if .Values.bff.enabled }}
+  {{ include "osb.bff.image" . }}
+{{- end }}
+
+{{- if .Values.ingress.enabled }}
+
+Ingress hosts:
+{{- range .Values.ingress.hosts }}
+  http{{ if $.Values.ingress.tls }}s{{ end }}://{{ .host }}
+{{- end }}
+{{- else }}
+
+Port-forward the Admin UI (BFF):
+
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "osb.bff.fullname" . }} 8081:{{ .Values.bff.service.port }}
+
+Then open http://127.0.0.1:8081
+{{- end }}
+
+Ensure Postgres, Keycloak, and n8n are reachable at the URLs in values (`config.*`).
+Chart published as OCI: oci://ghcr.io/eumicro/osb-api/osb
