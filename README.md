@@ -209,7 +209,7 @@ ghcr.io/eumicro/osb-api/osb-bff:<tag>
 oci://ghcr.io/eumicro/osb-api/osb:<chart-version>
 ```
 
-Helm (Kubernetes dogfood):
+Helm (Kubernetes):
 
 ```bash
 helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
@@ -228,7 +228,7 @@ docker build -f osb-api/src/main/docker/Dockerfile.jvm -t osb-api ./osb-api
 docker build -f osb-bff/src/main/docker/Dockerfile.jvm -t osb-bff ./osb-bff
 ```
 
-Pull / Compose dogfood (no local Maven image build):
+Pull / Compose with GHCR images (no local Maven image build):
 
 ```bash
 docker pull ghcr.io/eumicro/osb-api/osb-api:latest

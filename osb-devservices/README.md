@@ -31,7 +31,7 @@ OSB_SKIP_KIND=true ./osb-devservices/scripts/up.sh
 
 `up.sh` runs `compose up -d --build --wait` and tags images `osb-api:local` / `osb-bff:local` (JDWP on `:5005` / `:5006`). Dockerfiles: `docker/Dockerfile.osb-*`.
 
-### Pull GHCR images (dogfood, no local Maven build)
+### Pull GHCR images (no local Maven build)
 
 After [Container Images](../.github/workflows/container-images.yml) has published to GHCR:
 

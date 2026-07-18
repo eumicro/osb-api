@@ -67,7 +67,7 @@ containerSecurityContext:
   readOnlyRootFilesystem: false
   runAsNonRoot: true
 
-# Application wiring (override for your cluster / dogfood namespace).
+# Application wiring (override for your cluster / namespace).
 config:
   # Quarkus profile; leave empty to rely on env overrides only.
   quarkusProfile: ""

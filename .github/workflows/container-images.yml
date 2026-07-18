@@ -96,7 +96,7 @@ jobs:
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.title=${{ matrix.image_suffix }}
-            org.opencontainers.image.description=OSB ${{ matrix.image_suffix }} JVM image (dogfood / Compose)
+            org.opencontainers.image.description=OSB ${{ matrix.image_suffix }} JVM image
           # workflow_call keeps github.ref on the caller branch — pass the release tag via inputs.ref
           tags: |
             type=ref,event=branch
