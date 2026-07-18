@@ -190,9 +190,15 @@ For UI typecheck only:
 cd frontend && npm ci && npm run typecheck
 ```
 
-## Container images (GHCR)
+## Releases & container images
 
-GitHub Actions workflow [`.github/workflows/container-images.yml`](.github/workflows/container-images.yml) builds JVM images for `osb-api` and `osb-bff` and pushes them to [GHCR](https://docs.github.com/en/packages/working-with-a-github-packages-registry/working-with-the-container-registry) on pushes to `main`, tags `v*`, and `workflow_dispatch`. Pull requests build without pushing.
+Release process (Conventional Commits → changelog → GitHub Release → GHCR): see [`docs/RELEASING.md`](docs/RELEASING.md).
+
+| Workflow | Role |
+| --- | --- |
+| [Release Please](.github/workflows/release-please.yml) | Release PR, `CHANGELOG.md`, GitHub Release notes, then image publish |
+| [Manual Release](.github/workflows/release-manual.yml) | Escape hatch: version input → tag + notes + images |
+| [Container Images](.github/workflows/container-images.yml) | JVM images to GHCR (`main` → `latest`; release tags → SemVer) |
 
 Published images:
 
@@ -200,8 +206,6 @@ Published images:
 ghcr.io/eumicro/osb-api/osb-api:<tag>
 ghcr.io/eumicro/osb-api/osb-bff:<tag>
 ```
-
-Tags: `latest` (default branch), branch name, short git SHA, and semver from `v*` tags.
 
 Local JVM image build:
 
@@ -231,6 +235,8 @@ If packages are private, `docker login ghcr.io` with a PAT that has `read:packag
 | Doc | Description |
 | --- | --- |
 | [`docs/arc42.md`](docs/arc42.md) | Architecture (goals, context, building blocks, runtime, ADRs) |
+| [`docs/RELEASING.md`](docs/RELEASING.md) | Release Please, notes, SemVer, GHCR |
+| [`CHANGELOG.md`](CHANGELOG.md) | Generated release history |
 | [`osb-devservices/README.md`](osb-devservices/README.md) | Local infrastructure, Kind, Gitea, realtest seeds |
 
 ## License

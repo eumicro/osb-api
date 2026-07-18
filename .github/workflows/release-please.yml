@@ -1,0 +1,45 @@
+name: Release Please
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+  packages: write
+
+jobs:
+  release-please:
+    name: Release Please
+    runs-on: ubuntu-latest
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - name: Create release PR / GitHub Release
+        id: release
+        uses: googleapis/release-please-action@v4
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+          # Prefer a PAT (secret RELEASE_PLEASE_TOKEN) if you need CI to run on the
+          # release PR, or tag-push workflows to fire. GITHUB_TOKEN is enough for
+          # Release + CHANGELOG; we publish images via workflow_call below.
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+  publish-images:
+    name: Publish release images
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    uses: ./.github/workflows/container-images.yml
+    with:
+      ref: ${{ needs.release-please.outputs.tag_name }}
+      push_images: true
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write

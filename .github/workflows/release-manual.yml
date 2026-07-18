@@ -1,0 +1,209 @@
+name: Manual Release
+
+# Escape hatch when you need a versioned GitHub Release + notes outside Release Please.
+# Prefer Release Please (push to main → release PR) for day-to-day releases.
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "SemVer without leading v (e.g. 0.1.0 or 0.2.0-rc.1)"
+        required: true
+        type: string
+      prerelease:
+        description: "Mark GitHub Release as prerelease"
+        required: false
+        type: boolean
+        default: false
+      skip_snapshot_bump:
+        description: "Skip post-release SNAPSHOT bump commit"
+        required: false
+        type: boolean
+        default: false
+
+concurrency:
+  group: manual-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    name: Tag, notes, GitHub Release
+    runs-on: ubuntu-latest
+    outputs:
+      tag_name: ${{ steps.meta.outputs.tag }}
+      version: ${{ steps.meta.outputs.version }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.RELEASE_PLEASE_TOKEN || github.token }}
+
+      - name: Validate version
+        id: meta
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+([.-][0-9A-Za-z.-]+)?$ ]]; then
+            echo "::error::Invalid SemVer: $VERSION"
+            exit 1
+          fi
+          TAG="v${VERSION}"
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "::error::Tag $TAG already exists"
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "25"
+          cache: maven
+
+      - name: Bump Maven + frontend to release version
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          chmod +x mvnw
+          ./mvnw -B org.codehaus.mojo:versions-maven-plugin:2.18.0:set \
+            -DnewVersion="${VERSION}" \
+            -DgenerateBackupPoms=false \
+            -DprocessAllModules=true
+          python3 - <<'PY'
+          import json, os
+          path = "frontend/package.json"
+          with open(path, encoding="utf-8") as f:
+              data = json.load(f)
+          data["version"] = os.environ["VERSION"]
+          with open(path, "w", encoding="utf-8", newline="\n") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          PY
+
+      - name: Generate release notes
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          PREV=$(git describe --tags --abbrev=0 2>/dev/null || true)
+          API_ARGS=(-f "tag_name=${TAG}" -f "target_commitish=$(git rev-parse HEAD)")
+          if [[ -n "${PREV}" ]]; then
+            API_ARGS+=(-f "previous_tag_name=${PREV}")
+          fi
+          gh api "repos/${{ github.repository }}/releases/generate-notes" \
+            "${API_ARGS[@]}" \
+            --jq .body > /tmp/release-notes.md
+          {
+            echo "## Images"
+            echo ""
+            echo '```'
+            echo "ghcr.io/eumicro/osb-api/osb-api:${VERSION}"
+            echo "ghcr.io/eumicro/osb-api/osb-bff:${VERSION}"
+            echo '```'
+            echo ""
+            cat /tmp/release-notes.md
+          } > /tmp/release-body.md
+
+      - name: Update CHANGELOG.md
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          export DATE_UTC
+          DATE_UTC=$(date -u +%Y-%m-%d)
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          version = os.environ["VERSION"]
+          date = os.environ["DATE_UTC"]
+          notes = Path("/tmp/release-notes.md").read_text(encoding="utf-8").replace("## ", "### ")
+          path = Path("CHANGELOG.md")
+          text = path.read_text(encoding="utf-8")
+          marker = "## [Unreleased]\n"
+          if marker not in text:
+              raise SystemExit("CHANGELOG.md missing ## [Unreleased] section")
+          insert = f"{marker}\n## [{version}] - {date}\n\n{notes}\n"
+          path.write_text(text.replace(marker, insert, 1), encoding="utf-8", newline="\n")
+          PY
+
+      - name: Commit release + tag
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+          TAG: ${{ steps.meta.outputs.tag }}
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          printf '{\n  ".": "%s"\n}\n' "$VERSION" > .release-please-manifest.json
+          git add $(git ls-files '*pom.xml') frontend/package.json CHANGELOG.md .release-please-manifest.json
+          git commit -m "chore(release): ${VERSION}"
+          git tag -a "$TAG" -m "Release ${VERSION}"
+          git push origin HEAD:${{ github.ref_name }}
+          git push origin "$TAG"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.meta.outputs.tag }}
+          PRERELEASE: ${{ inputs.prerelease }}
+        run: |
+          set -euo pipefail
+          EXTRA=()
+          if [[ "$PRERELEASE" == "true" ]]; then
+            EXTRA+=(--prerelease)
+          fi
+          gh release create "$TAG" \
+            --title "$TAG" \
+            --notes-file /tmp/release-body.md \
+            "${EXTRA[@]}"
+
+      - name: Bump to next SNAPSHOT
+        if: ${{ !inputs.skip_snapshot_bump }}
+        env:
+          VERSION: ${{ steps.meta.outputs.version }}
+        run: |
+          set -euo pipefail
+          BASE="${VERSION%%-*}"
+          IFS=. read -r MAJOR MINOR PATCH <<<"$BASE"
+          NEXT_PATCH=$((PATCH + 1))
+          NEXT="${MAJOR}.${MINOR}.${NEXT_PATCH}-SNAPSHOT"
+          FRONTEND_VER="${MAJOR}.${MINOR}.${NEXT_PATCH}"
+          ./mvnw -B org.codehaus.mojo:versions-maven-plugin:2.18.0:set \
+            -DnewVersion="${NEXT}" \
+            -DgenerateBackupPoms=false \
+            -DprocessAllModules=true
+          python3 - <<PY
+          import json
+          path = "frontend/package.json"
+          with open(path, encoding="utf-8") as f:
+              data = json.load(f)
+          data["version"] = "${FRONTEND_VER}"
+          with open(path, "w", encoding="utf-8", newline="\n") as f:
+              json.dump(data, f, indent=2)
+              f.write("\n")
+          PY
+          git add $(git ls-files '*pom.xml') frontend/package.json
+          git commit -m "chore: bump version to ${NEXT}"
+          git push origin HEAD:${{ github.ref_name }}
+
+  publish-images:
+    name: Publish release images
+    needs: release
+    uses: ./.github/workflows/container-images.yml
+    with:
+      ref: ${{ needs.release.outputs.tag_name }}
+      push_images: true
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write

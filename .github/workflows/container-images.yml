@@ -6,9 +6,21 @@ on:
     tags: ["v*"]
   pull_request:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      ref:
+        description: "Git ref to build (tag or SHA). Empty = default checkout ref."
+        required: false
+        type: string
+        default: ""
+      push_images:
+        description: "Push images to GHCR"
+        required: false
+        type: boolean
+        default: true
 
 concurrency:
-  group: container-images-${{ github.ref }}
+  group: container-images-${{ github.workflow }}-${{ inputs.ref || github.ref }}
   cancel-in-progress: true
 
 env:
@@ -35,6 +47,9 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
 
       - name: Set up Java 25
         uses: actions/setup-java@v4
@@ -62,6 +77,17 @@ jobs:
           owner_repo=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "name=${{ env.REGISTRY }}/${owner_repo}/${{ matrix.image_suffix }}" >> "$GITHUB_OUTPUT"
 
+      - name: Resolve push flag
+        id: push
+        run: |
+          if [[ "${{ github.event_name }}" == "pull_request" ]]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+          elif [[ "${{ github.event_name }}" == "workflow_call" ]]; then
+            echo "enabled=${{ inputs.push_images }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -71,19 +97,22 @@ jobs:
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.title=${{ matrix.image_suffix }}
             org.opencontainers.image.description=OSB ${{ matrix.image_suffix }} JVM image (dogfood / Compose)
+          # workflow_call keeps github.ref on the caller branch — pass the release tag via inputs.ref
           tags: |
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{version}},value=${{ inputs.ref }},enable=${{ github.event_name == 'workflow_call' && inputs.ref != '' }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ inputs.ref }},enable=${{ github.event_name == 'workflow_call' && inputs.ref != '' }}
             type=sha,format=short
-            type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable=${{ github.event_name != 'workflow_call' && github.event_name != 'pull_request' && github.ref_name == github.event.repository.default_branch }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GHCR
-        if: github.event_name != 'pull_request'
+        if: steps.push.outputs.enabled == 'true'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -95,7 +124,7 @@ jobs:
         with:
           context: ${{ matrix.module }}
           file: ${{ matrix.module }}/src/main/docker/Dockerfile.jvm
-          push: ${{ github.event_name != 'pull_request' }}
+          push: ${{ steps.push.outputs.enabled == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha,scope=${{ matrix.image_suffix }}
