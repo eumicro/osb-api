@@ -88,10 +88,34 @@ jobs:
           owner_repo=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "oci_base=${{ env.REGISTRY }}/${owner_repo}" >> "$GITHUB_OUTPUT"
 
+      # workflow_call keeps the caller's event_name (often "push"); detect publish
+      # intent via non-empty release inputs instead of event_name == workflow_call.
+      - name: Decide publish
+        id: publish
+        env:
+          INPUT_REF: ${{ inputs.ref }}
+          INPUT_VERSION: ${{ inputs.version }}
+          INPUT_PUSH: ${{ inputs.push_chart }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          SYNC=false
+          PUSH=false
+          if [[ "${EVENT_NAME}" == "pull_request" ]]; then
+            :
+          elif [[ "${EVENT_NAME}" == "workflow_dispatch" ]]; then
+            SYNC=true
+            PUSH="${INPUT_PUSH}"
+          elif [[ -n "${INPUT_REF}" || -n "${INPUT_VERSION}" ]]; then
+            # workflow_call from Release Please / Manual Release
+            SYNC=true
+            PUSH="${INPUT_PUSH}"
+          fi
+          echo "sync_versions=${SYNC}" >> "$GITHUB_OUTPUT"
+          echo "push_enabled=${PUSH}" >> "$GITHUB_OUTPUT"
+
       - name: Sync Chart.yaml versions (publish path)
-        if: >-
-          github.event_name == 'workflow_call' ||
-          (github.event_name == 'workflow_dispatch' && inputs.push_chart)
+        if: steps.publish.outputs.sync_versions == 'true'
         env:
           VERSION: ${{ steps.ver.outputs.version }}
         run: |
@@ -116,25 +140,14 @@ jobs:
           helm package "${CHART_DIR}" --destination /tmp/helm-out
           ls -la /tmp/helm-out
 
-      - name: Decide push
-        id: push
-        run: |
-          if [[ "${{ github.event_name }}" == "pull_request" || "${{ github.event_name }}" == "push" ]]; then
-            echo "enabled=false" >> "$GITHUB_OUTPUT"
-          elif [[ "${{ github.event_name }}" == "workflow_call" ]]; then
-            echo "enabled=${{ inputs.push_chart }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "enabled=${{ inputs.push_chart }}" >> "$GITHUB_OUTPUT"
-          fi
-
       - name: Log in to GHCR
-        if: steps.push.outputs.enabled == 'true'
+        if: steps.publish.outputs.push_enabled == 'true'
         run: |
           echo "${{ secrets.GITHUB_TOKEN }}" | helm registry login ghcr.io \
             -u "${{ github.actor }}" --password-stdin
 
       - name: Push OCI chart
-        if: steps.push.outputs.enabled == 'true'
+        if: steps.publish.outputs.push_enabled == 'true'
         env:
           VERSION: ${{ steps.ver.outputs.version }}
           OCI_BASE: ${{ steps.ver.outputs.oci_base }}
