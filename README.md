@@ -257,7 +257,7 @@ oci://ghcr.io/eumicro/osb-api/osb:<chart-version>
 Helm (Kubernetes dogfood):
 
 ```bash
-helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.1 \
   -n osb --create-namespace \
   --set config.postgres.password=osb
 # see charts/osb/README.md and values-kind-example.yaml

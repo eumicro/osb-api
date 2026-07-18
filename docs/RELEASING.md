@@ -77,16 +77,16 @@ with generated notes (+ image URLs), publishes GHCR images, then bumps SNAPSHOT
 ## Pull published images / Helm chart
 
 ```bash
-docker pull ghcr.io/eumicro/osb-api/osb-api:0.1.0
-docker pull ghcr.io/eumicro/osb-api/osb-bff:0.1.0
+docker pull ghcr.io/eumicro/osb-api/osb-api:0.1.1
+docker pull ghcr.io/eumicro/osb-api/osb-bff:0.1.1
 
-helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+helm install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.1 \
   -n osb --create-namespace \
   -f charts/osb/values-kind-example.yaml
 
 cd osb-devservices
-OSB_API_IMAGE=ghcr.io/eumicro/osb-api/osb-api:0.1.0 \
-OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.0 \
+OSB_API_IMAGE=ghcr.io/eumicro/osb-api/osb-api:0.1.1 \
+OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.1 \
   docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --wait
 ```
 
