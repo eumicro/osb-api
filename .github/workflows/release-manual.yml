@@ -207,3 +207,16 @@ jobs:
     permissions:
       contents: read
       packages: write
+
+  publish-helm:
+    name: Publish Helm chart
+    needs: release
+    uses: ./.github/workflows/helm.yml
+    with:
+      ref: ${{ needs.release.outputs.tag_name }}
+      version: ${{ needs.release.outputs.version }}
+      push_chart: true
+    secrets: inherit
+    permissions:
+      contents: read
+      packages: write

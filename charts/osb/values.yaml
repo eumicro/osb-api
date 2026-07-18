@@ -1,0 +1,113 @@
+# Default image registry matches GHCR packages from this repository.
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Shared image tag (defaults to Chart.appVersion when empty).
+imageTag: ""
+
+api:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/eumicro/osb-api/osb-api
+    pullPolicy: IfNotPresent
+    # tag: ""  # overrides .imageTag / Chart.appVersion
+  service:
+    type: ClusterIP
+    port: 8080
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  env: {}
+  # Extra env from an existing Secret (keys become env var names).
+  existingSecret: ""
+  # Extra env from an existing ConfigMap.
+  existingConfigMap: ""
+
+bff:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: ghcr.io/eumicro/osb-api/osb-bff
+    pullPolicy: IfNotPresent
+  service:
+    type: ClusterIP
+    port: 8081
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+  env: {}
+  existingSecret: ""
+  existingConfigMap: ""
+
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+podAnnotations: {}
+podLabels: {}
+
+podSecurityContext:
+  runAsNonRoot: true
+  seccompProfile:
+    type: RuntimeDefault
+
+containerSecurityContext:
+  allowPrivilegeEscalation: false
+  capabilities:
+    drop: ["ALL"]
+  readOnlyRootFilesystem: false
+  runAsNonRoot: true
+
+# Application wiring (override for your cluster / dogfood namespace).
+config:
+  # Quarkus profile; leave empty to rely on env overrides only.
+  quarkusProfile: ""
+  postgres:
+    jdbcUrl: jdbc:postgresql://postgres:5432/osb
+    username: osb
+    # Prefer existingSecret with keys OSB_POSTGRES_PASSWORD (and username if needed).
+    password: ""
+  n8n:
+    baseUrl: http://n8n:5678
+    clientToken: ""
+    bridgeSecret: ""
+  keycloak:
+    # osb-api Keycloak base URL (no /realms/…).
+    url: http://keycloak:8080
+    realm: osb
+    # BFF OIDC backchannel (in-cluster).
+    authServerUrl: http://keycloak:8080/realms/osb
+    # Browser-facing issuer / auth endpoints (must match what users open).
+    tokenIssuer: http://keycloak.localhost/realms/osb
+    authorizationPath: http://keycloak.localhost/realms/osb/protocol/openid-connect/auth
+    endSessionPath: http://keycloak.localhost/realms/osb/protocol/openid-connect/logout
+    tokenPath: /protocol/openid-connect/token
+    jwksPath: /protocol/openid-connect/certs
+    discoveryEnabled: "false"
+  # BFF → API (in-cluster). Auto-set to the chart's API service when empty.
+  apiUrl: ""
+
+ingress:
+  enabled: false
+  className: nginx
+  annotations: {}
+  hosts:
+    - host: osb.localhost
+      paths:
+        - path: /
+          pathType: Prefix
+          service: bff
+  tls: []
+
+nodeSelector: {}
+tolerations: []
+affinity: {}

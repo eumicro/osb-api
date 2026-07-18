@@ -1,0 +1,8 @@
+# Patterns to ignore when packaging.
+*.tgz
+.git
+.gitignore
+*.md
+.DS_Store
+.vscode
+.idea

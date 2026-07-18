@@ -1,0 +1,35 @@
+# Example overrides for a Kind / in-cluster dogfood namespace where
+# Postgres, Keycloak, and n8n are already running (e.g. same cluster or via ExternalName).
+#
+#   helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.0 \
+#     -n osb --create-namespace -f charts/osb/values-kind-example.yaml
+
+imageTag: "0.1.0"
+
+ingress:
+  enabled: true
+  className: nginx
+  hosts:
+    - host: osb.localhost
+      paths:
+        - path: /
+          pathType: Prefix
+          service: bff
+
+config:
+  postgres:
+    jdbcUrl: jdbc:postgresql://postgres:5432/osb
+    username: osb
+    password: osb
+  n8n:
+    baseUrl: http://n8n:5678
+    clientToken: osb-n8n-client-dev-secret
+    bridgeSecret: osb-n8n-bridge-dev-secret
+  keycloak:
+    url: http://keycloak:8080
+    realm: osb
+    authServerUrl: http://keycloak:8080/realms/osb
+    # Adjust to the hostname browsers use for Keycloak.
+    tokenIssuer: http://keycloak.localhost/realms/osb
+    authorizationPath: http://keycloak.localhost/realms/osb/protocol/openid-connect/auth
+    endSessionPath: http://keycloak.localhost/realms/osb/protocol/openid-connect/logout
