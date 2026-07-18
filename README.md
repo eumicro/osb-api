@@ -284,7 +284,7 @@ docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml 
 docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --wait
 ```
 
-If packages are private, `docker login ghcr.io` with a PAT that has `read:packages`. After the first publish you can set package visibility to public under GitHub → Packages.
+GHCR packages (`osb-api`, `osb-bff`, Helm chart `osb`) are **public** — no `docker login` / `helm registry login` required for pull.
 
 ## Documentation
 

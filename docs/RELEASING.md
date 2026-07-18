@@ -98,7 +98,7 @@ Chart source: [`charts/osb`](../charts/osb). Details: [`charts/osb/README.md`](.
 2. Ensure Actions can open PRs (setting above).
 3. Wait for / dispatch **Release Please** → merge the release PR (first version defaults toward `0.1.0` via `initial-version`).
 4. Confirm GitHub Release notes and GHCR packages.
-5. Optionally set package visibility to **public** under GitHub → Packages.
+5. Confirm GHCR packages stay **public** (`osb-api`, `osb-bff`, Helm `osb`) under GitHub → Packages (anonymous pull).
 
 ## Branch & tag protection
 
