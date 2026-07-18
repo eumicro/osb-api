@@ -52,7 +52,9 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Package ${{ matrix.module }}
-        run: ./mvnw -B -pl ${{ matrix.module }} -am package -DskipTests
+        run: |
+          chmod +x mvnw
+          ./mvnw -B -pl ${{ matrix.module }} -am package -DskipTests
 
       - name: Image name (lowercase)
         id: image
