@@ -92,3 +92,14 @@ OSB_BFF_IMAGE=ghcr.io/eumicro/osb-api/osb-bff:0.1.0 \
 3. Wait for / dispatch **Release Please** → merge the release PR (first version defaults toward `0.1.0` via `initial-version`).
 4. Confirm GitHub Release notes and GHCR packages.
 5. Optionally set package visibility to **public** under GitHub → Packages.
+
+## Branch & tag protection
+
+Repository rulesets (Settings → Rules → Rulesets):
+
+| Ruleset | Applies to | Enforces |
+| --- | --- | --- |
+| **Protect main** | default branch | PR required, CI `osb-api` + `osb-bff` must pass (branch up to date), no force-push, no delete; open review threads must be resolved. Admins may bypass only when merging a PR. |
+| **Protect release tags** | `v*` | no delete / retarget / force-update (admins may bypass) |
+
+Direct pushes to `main` are blocked; changes go through pull requests.
