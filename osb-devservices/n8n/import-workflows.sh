@@ -56,7 +56,7 @@ ${CLI} exec "${CONTAINER}" sh -c '
   echo "Imported $count workflow(s)."
 '
 
-# Publish fixed ids used by OSB offering_workflows / seed data (3 scenarios × lifecycle)
+# Publish fixed ids used by OSB offering_workflows / seed data (scenarios × lifecycle)
 publish_ids=(
   osbWfGitProvision osbWfGitDeprovision osbWfGitUpdate
   osbWfGitBind osbWfGitUnbind osbWfGitGetInstance osbWfGitGetBinding
@@ -67,6 +67,9 @@ publish_ids=(
   osbWfKcProvision osbWfKcDeprovision osbWfKcUpdate
   osbWfKcBind osbWfKcUnbind osbWfKcGetInstance osbWfKcGetBinding
   osbWfKcInstanceLastOp osbWfKcBindingLastOp
+  osbWfOsbProvision osbWfOsbDeprovision osbWfOsbUpdate
+  osbWfOsbBind osbWfOsbUnbind osbWfOsbGetInstance osbWfOsbGetBinding
+  osbWfOsbInstanceLastOp osbWfOsbBindingLastOp
 )
 
 failed=0
@@ -122,6 +125,8 @@ wait_webhooks_ready() {
     osb-redis-deprovision
     osb-git-provision
     osb-kc-provision
+    osb-platform-provision
+    osb-platform-deprovision
   )
   local attempt
   for attempt in $(seq 1 40); do

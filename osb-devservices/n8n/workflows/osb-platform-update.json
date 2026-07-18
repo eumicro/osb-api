@@ -1,0 +1,84 @@
+{
+  "id": "osbWfOsbUpdate",
+  "name": "OSB Platform Update",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-platform-update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfOsbUpdate",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-platform-update"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-osb-platform",
+        "clientId": "k8s-local-dev"
+      },
+      "id": "ClientosbWfOsbUpdate",
+      "name": "OSB Kubernetes",
+      "type": "CUSTOM.osbKubernetes",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'UPDATE', operationId: $json.operationId, scenario: 'osb-platform', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfOsbUpdate",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Kubernetes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Kubernetes": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

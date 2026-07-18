@@ -1,0 +1,84 @@
+{
+  "id": "osbWfOsbBindingLastOp",
+  "name": "OSB Platform Binding Last Op",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-platform-binding-last-operation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfOsbBindingLastOp",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-platform-binding-last-operation"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-osb-platform-bind",
+        "clientId": "k8s-local-dev"
+      },
+      "id": "ClientosbWfOsbBindingLastOp",
+      "name": "OSB Kubernetes",
+      "type": "CUSTOM.osbKubernetes",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'BINDING_LAST_OPERATION', operationId: $json.operationId, scenario: 'osb-platform', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfOsbBindingLastOp",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Kubernetes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Kubernetes": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

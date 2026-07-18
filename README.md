@@ -176,6 +176,7 @@ Flyway seeds (see `osb-devservices` README) include demo offerings that exercise
 | `git-file-store` | Gitea | Commits a test file into `osb/git-demo-templates` |
 | `redis-cache` | Kind | Redis + Redis Commander + Ingress |
 | `keycloak-realm` | Keycloak Admin HTTP | Creates realm `osb-<instanceId>` |
+| `osb-platform` | Kind | Nested Postgres + `osb-api` + `osb-bff` (GHCR images) + Ingress |
 
 ## Build
 
