@@ -8,7 +8,8 @@
     "dev": "vite",
     "build": "vue-tsc --noEmit && vite build",
     "preview": "vite preview",
-    "typecheck": "vue-tsc --noEmit"
+    "typecheck": "vue-tsc --noEmit",
+    "demo:gif": "tsx scripts/record-readme-demo.ts"
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
@@ -21,7 +22,12 @@
     "vue-i18n": "^11.4.6"
   },
   "devDependencies": {
+    "@types/pngjs": "^6.0.5",
     "@vitejs/plugin-vue": "^5.2.1",
+    "gifenc": "^1.0.3",
+    "playwright": "^1.52.0",
+    "pngjs": "^7.0.0",
+    "tsx": "^4.20.3",
     "typescript": "^5.7.2",
     "vite": "^6.2.0",
     "vue-tsc": "^2.2.0"
