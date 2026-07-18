@@ -1,0 +1,84 @@
+{
+  "id": "osbWfGitUnbind",
+  "name": "OSB Git Unbind",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-git-unbind",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfGitUnbind",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-git-unbind"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-git-bind-file",
+        "clientId": "git-demo-templates"
+      },
+      "id": "ClientosbWfGitUnbind",
+      "name": "OSB Git",
+      "type": "CUSTOM.osbGit",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'UNBIND', operationId: $json.operationId, scenario: 'git', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfGitUnbind",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Git",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Git": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

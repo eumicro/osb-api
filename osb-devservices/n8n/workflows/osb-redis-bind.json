@@ -1,0 +1,84 @@
+{
+  "id": "osbWfRedisBind",
+  "name": "OSB Redis Bind",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-redis-bind",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfRedisBind",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-redis-bind"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-redis-bind-secret",
+        "clientId": "k8s-local-dev"
+      },
+      "id": "ClientosbWfRedisBind",
+      "name": "OSB Kubernetes",
+      "type": "CUSTOM.osbKubernetes",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'BIND', operationId: $json.operationId, scenario: 'redis', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfRedisBind",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Kubernetes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Kubernetes": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

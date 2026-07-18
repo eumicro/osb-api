@@ -1,0 +1,31 @@
+/** Named icons used by Icon atom / BaseButton. */
+export const ICON_NAMES = [
+  "plus",
+  "trash",
+  "refresh",
+  "save",
+  "edit",
+  "tab",
+  "x",
+  "check",
+  "layout",
+  "panels",
+  "table",
+  "list",
+  "cards",
+  "chevronLeft",
+  "chevronRight",
+  "chevronUp",
+  "chevronDown",
+  "group",
+  "sun",
+  "moon",
+  "globe",
+  "user",
+  "logOut",
+  "uuid",
+  "search",
+  "status",
+] as const;
+
+export type IconName = (typeof ICON_NAMES)[number];

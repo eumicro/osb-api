@@ -1,0 +1,29 @@
+{
+  "name": "osb-ui",
+  "private": true,
+  "version": "0.1.0",
+  "description": "OSB-API Management UI",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@guolao/vue-monaco-editor": "^1.6.0",
+    "@jsonschema-editor/json-schema-extensions": "^0.1.11",
+    "@jsonschema-editor/vue": "^0.1.11",
+    "@jsonschema-editor/vue-extensions": "^0.1.11",
+    "dockview-vue": "^7.0.2",
+    "monaco-editor": "^0.55.1",
+    "vue": "^3.5.13",
+    "vue-i18n": "^11.4.6"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^5.2.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.2.0",
+    "vue-tsc": "^2.2.0"
+  }
+}

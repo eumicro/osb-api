@@ -1,0 +1,236 @@
+name: osb-devservices
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: osb-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-osb}
+      POSTGRES_USER: ${POSTGRES_USER:-osb}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-osb}
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - osb_postgres_data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-osb} -d ${POSTGRES_DB:-osb}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.2
+    container_name: osb-keycloak
+    command:
+      - start-dev
+      - --import-realm
+      - --http-port=8080
+    environment:
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      KC_HEALTH_ENABLED: "true"
+      KC_HTTP_ENABLED: "true"
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: ${KEYCLOAK_PORT:-8180}
+      KC_HOSTNAME_STRICT: "false"
+      KC_HOSTNAME_STRICT_HTTPS: "false"
+      KC_HTTP_RELATIVE_PATH: /
+    ports:
+      - "${KEYCLOAK_PORT:-8180}:8080"
+    volumes:
+      - ./keycloak/realm-osb.json:/opt/keycloak/data/import/realm-osb.json:ro
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  n8n:
+    image: n8nio/n8n:2.23.3
+    container_name: osb-n8n
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+    environment:
+      N8N_HOST: ${N8N_HOST:-localhost}
+      N8N_PORT: 5678
+      N8N_PROTOCOL: http
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL:-http://localhost:5678}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL:-http://localhost:5678/}
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-osb-dev-n8n-encryption-key}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "false"
+      # Persist workflows/credentials in compose Postgres (DB created by postgres/init)
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: 5432
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: ${POSTGRES_USER:-osb}
+      DB_POSTGRESDB_PASSWORD: ${POSTGRES_PASSWORD:-osb}
+      # Community OIDC (Keycloak) via external hooks — not Enterprise SSO
+      EXTERNAL_HOOK_FILES: /home/node/hooks.js
+      EXTERNAL_FRONTEND_HOOKS_URLS: /assets/oidc-frontend-hook.js
+      N8N_ADDITIONAL_NON_UI_ROUTES: auth
+      OIDC_ISSUER_URL: http://keycloak:8080/realms/osb
+      OIDC_BROWSER_ORIGIN: http://localhost:${KEYCLOAK_PORT:-8180}
+      OIDC_CLIENT_ID: osb-n8n
+      OIDC_CLIENT_SECRET: ${N8N_OIDC_CLIENT_SECRET:-osb-n8n-dev-secret}
+      OIDC_REDIRECT_URI: http://localhost:5678/auth/oidc/callback
+      OIDC_SCOPES: openid email profile
+      # Shared with osb-bff (osb.bff.n8n.bridge-secret) for iframe session propagation
+      OSB_N8N_BRIDGE_SECRET: ${OSB_N8N_BRIDGE_SECRET:-osb-n8n-bridge-dev-secret}
+      # Custom OSB client nodes → osb-api on the Compose network
+      N8N_CUSTOM_EXTENSIONS: /home/node/custom
+      OSB_API_BASE_URL: ${OSB_API_BASE_URL:-http://osb-api:8080}
+      OSB_N8N_CLIENT_TOKEN: ${OSB_N8N_CLIENT_TOKEN:-osb-n8n-client-dev-secret}
+      # When host osb-api is unreachable from the container (common on Podman/Windows)
+      # Realtest: fail loudly when host osb-api is unreachable (set true only for offline editor work)
+      OSB_CLIENT_ALLOW_LOCAL_FALLBACK: ${OSB_CLIENT_ALLOW_LOCAL_FALLBACK:-false}
+      # OSB-only editor: webhook + respond + three OSB client nodes (no Slack/HTTP/Code/AI/…)
+      NODES_INCLUDE: '["n8n-nodes-base.webhook","n8n-nodes-base.respondToWebhook","CUSTOM.osbGit","CUSTOM.osbKubernetes","CUSTOM.osbHttp"]'
+      N8N_COMMUNITY_PACKAGES_ENABLED: "false"
+      N8N_VERIFIED_PACKAGES_ENABLED: "false"
+      N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
+      N8N_PYTHON_ENABLED: "false"
+      N8N_AI_ENABLED: "false"
+      N8N_TEMPLATES_ENABLED: "false"
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_VERSION_NOTIFICATIONS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_ONBOARDING_FLOW_DISABLED: "true"
+      # Allow embedding the editor in OSB Admin (BFF :8081). Helmet requires default-src.
+      N8N_CONTENT_SECURITY_POLICY: >-
+        {"defaultSrc":["'self'","https:","data:","blob:","'unsafe-inline'","'unsafe-eval'"],"scriptSrc":["'self'","'unsafe-inline'","'unsafe-eval'","https://cdn-rs.n8n.io"],"styleSrc":["'self'","'unsafe-inline'","https:"],"imgSrc":["'self'","data:","https:","blob:"],"fontSrc":["'self'","data:","https:"],"connectSrc":["'self'","https:","wss:","ws:","http:","ws:"],"workerSrc":["'self'","blob:"],"frameAncestors":["'self'","http://localhost:8081","http://127.0.0.1:8081"],"frameSrc":["'self'","http://localhost:8180","http://127.0.0.1:8180"]}
+      GENERIC_TIMEZONE: ${TZ:-Europe/Berlin}
+      TZ: ${TZ:-Europe/Berlin}
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - osb_n8n_data:/home/node/.n8n
+      - ./n8n/hooks.js:/home/node/hooks.js:ro
+      - ./n8n/custom:/home/node/custom:ro
+      - ./n8n/workflows:/import/workflows:ro
+      - ./n8n/import-workflows.sh:/import/import-workflows.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 45s
+
+  osb-api:
+    build:
+      context: ..
+      dockerfile: osb-devservices/docker/Dockerfile.osb-api
+    image: osb-api:local
+    container_name: osb-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      n8n:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      gitea:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: compose
+      OSB_N8N_CLIENT_TOKEN: ${OSB_N8N_CLIENT_TOKEN:-osb-n8n-client-dev-secret}
+      OSB_POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/osb
+      OSB_POSTGRES_USERNAME: ${POSTGRES_USER:-osb}
+      OSB_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-osb}
+      OSB_N8N_BASE_URL: http://n8n:5678
+      OSB_KEYCLOAK_URL: http://keycloak:8080
+      OSB_KEYCLOAK_REALM: osb
+    ports:
+      - "${OSB_API_PORT:-8080}:8080"
+      - "${OSB_API_DEBUG_PORT:-5005}:5005"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8080/q/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+
+  osb-bff:
+    build:
+      context: ..
+      dockerfile: osb-devservices/docker/Dockerfile.osb-bff
+    image: osb-bff:local
+    container_name: osb-bff
+    depends_on:
+      postgres:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+      osb-api:
+        condition: service_healthy
+    environment:
+      QUARKUS_PROFILE: compose
+      OSB_BFF_N8N_BRIDGE_SECRET: ${OSB_N8N_BRIDGE_SECRET:-osb-n8n-bridge-dev-secret}
+      OSB_POSTGRES_JDBC_URL: jdbc:postgresql://postgres:5432/osb
+      OSB_POSTGRES_USERNAME: ${POSTGRES_USER:-osb}
+      OSB_POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-osb}
+      OSB_BFF_API_URL: http://osb-api:8080
+      OSB_BFF_N8N_BASE_URL: http://n8n:5678
+      # OIDC: container backchannel via service DNS; browser redirects via localhost:8180
+      QUARKUS_OIDC_AUTH_SERVER_URL: http://keycloak:8080/realms/osb
+      QUARKUS_OIDC_TOKEN_ISSUER: http://localhost:8180/realms/osb
+      QUARKUS_OIDC_DISCOVERY_ENABLED: "false"
+      QUARKUS_OIDC_AUTHORIZATION_PATH: http://localhost:8180/realms/osb/protocol/openid-connect/auth
+      QUARKUS_OIDC_TOKEN_PATH: /protocol/openid-connect/token
+      QUARKUS_OIDC_JWKS_PATH: /protocol/openid-connect/certs
+      QUARKUS_OIDC_END_SESSION_PATH: http://localhost:8180/realms/osb/protocol/openid-connect/logout
+    ports:
+      - "${OSB_BFF_PORT:-8081}:8081"
+      - "${OSB_BFF_DEBUG_PORT:-5006}:5006"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:8081/q/health >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 90s
+
+  # Lightweight Git server for provision template repos (seeded by scripts/gitea-seed.sh).
+  # Kind is started separately via scripts/kind-up.sh (not a Compose service).
+  gitea:
+    image: gitea/gitea:1.22.6
+    container_name: osb-gitea
+    environment:
+      USER_UID: "1000"
+      USER_GID: "1000"
+      GITEA__server__DOMAIN: localhost
+      GITEA__server__HTTP_PORT: 3000
+      GITEA__server__ROOT_URL: ${GITEA_ROOT_URL:-http://localhost:3000/}
+      # HTTPS clone only — built-in SSH on :22 fails under rootless Podman
+      GITEA__server__DISABLE_SSH: "true"
+      GITEA__server__START_SSH_SERVER: "false"
+      GITEA__database__DB_TYPE: sqlite3
+      GITEA__security__INSTALL_LOCK: "true"
+      GITEA__service__DISABLE_REGISTRATION: "true"
+      GITEA__service__REQUIRE_SIGNIN_VIEW: "false"
+    ports:
+      - "${GITEA_HTTP_PORT:-3000}:3000"
+    volumes:
+      - osb_gitea_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+volumes:
+  osb_postgres_data:
+  osb_n8n_data:
+  osb_gitea_data:

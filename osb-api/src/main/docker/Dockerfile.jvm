@@ -1,0 +1,31 @@
+####
+# JVM container for osb-api (Quarkus fast-jar).
+#
+# Build the app first:
+#   ./mvnw -pl osb-api -am package -DskipTests
+#
+# Then from the osb-api module directory:
+#   docker build -f src/main/docker/Dockerfile.jvm -t osb-api .
+####
+FROM eclipse-temurin:25-jre
+
+ENV LANGUAGE='en_US:en'
+WORKDIR /work/
+
+USER root
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && chown 1001 /work \
+    && chmod "g+rwX" /work \
+    && chown 1001:root /work
+
+COPY --chown=1001:root target/quarkus-app/lib/ /work/lib/
+COPY --chown=1001:root target/quarkus-app/*.jar /work/
+COPY --chown=1001:root target/quarkus-app/app/ /work/app/
+COPY --chown=1001:root target/quarkus-app/quarkus/ /work/quarkus/
+
+EXPOSE 8080
+USER 1001
+
+ENTRYPOINT ["java", "-Dquarkus.http.host=0.0.0.0", "-Djava.util.logging.manager=org.jboss.logmanager.LogManager", "-jar", "/work/quarkus-run.jar"]

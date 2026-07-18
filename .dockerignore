@@ -1,0 +1,16 @@
+**/.git
+**/.idea
+**/.vscode
+**/target
+**/node_modules
+**/dist
+**/.logs
+**/agent-transcripts
+osb-devservices/kind/kubeconfig
+osb-devservices/.env
+**/*.md
+!README.md
+frontend/node_modules
+frontend/dist
+**/tmp-*
+**/.cursor

@@ -1,0 +1,84 @@
+{
+  "id": "osbWfKcUnbind",
+  "name": "OSB Keycloak Unbind",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-kc-unbind",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfKcUnbind",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-kc-unbind"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-kc-client-delete",
+        "clientId": "http-keycloak-admin"
+      },
+      "id": "ClientosbWfKcUnbind",
+      "name": "OSB HTTP",
+      "type": "CUSTOM.osbHttp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'UNBIND', operationId: $json.operationId, scenario: 'kc', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfKcUnbind",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB HTTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB HTTP": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

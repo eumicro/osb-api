@@ -1,0 +1,189 @@
+{
+  "version": "2.0.0",
+  "options": {
+    "shell": {
+      "executable": "bash",
+      "args": ["-lc"]
+    }
+  },
+  "windows": {
+    "options": {
+      "shell": {
+        "executable": "C:\\Program Files\\Git\\bin\\bash.exe",
+        "args": ["-lc"]
+      }
+    }
+  },
+  "tasks": [
+    {
+      "label": "devservices:up",
+      "type": "shell",
+      "command": "./scripts/up.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/osb-devservices"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "group": "osb"
+      },
+      "detail": "Build images + start Compose (infra + osb-api + osb-bff, JDWP :5005/:5006)"
+    },
+    {
+      "label": "devservices:down",
+      "type": "shell",
+      "command": "./scripts/down.sh",
+      "options": {
+        "cwd": "${workspaceFolder}/osb-devservices"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "group": "osb"
+      }
+    },
+    {
+      "label": "compose:apps-up",
+      "type": "shell",
+      "command": "source ./scripts/container-cli.sh && resolve_container_cli && compose --env-file .env -f docker-compose.yml up -d --build --wait osb-api osb-bff",
+      "options": {
+        "cwd": "${workspaceFolder}/osb-devservices"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "always",
+        "panel": "shared",
+        "group": "osb"
+      },
+      "detail": "Rebuild/restart only osb-api + osb-bff (infra must already run)"
+    },
+    {
+      "label": "osb:stop-app-stack",
+      "type": "shell",
+      "command": "./scripts/dev-stop-app.sh",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "silent",
+        "panel": "shared",
+        "group": "osb",
+        "close": true
+      },
+      "detail": "Stops Compose osb-api/osb-bff and frees ports 8080/8081/5005/5006/5173"
+    },
+    {
+      "label": "osb:stop-all",
+      "dependsOrder": "sequence",
+      "dependsOn": ["osb:stop-app-stack", "devservices:down"],
+      "problemMatcher": [],
+      "detail": "Stops app containers and full Compose stack"
+    },
+    {
+      "label": "quarkus:api",
+      "type": "shell",
+      "command": "./mvnw -pl osb-api -am quarkus:dev -Dquarkus.console.enabled=false",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "quarkus-api",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*(Listening on:|started in ).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "osb"
+      },
+      "detail": "Legacy host quarkus:dev (conflicts with Compose osb-api on :8080)"
+    },
+    {
+      "label": "quarkus:bff",
+      "type": "shell",
+      "command": "./mvnw -pl osb-bff -am quarkus:dev -Dquarkus.console.enabled=false",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "quarkus-bff",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*(Listening on:|started in ).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "osb"
+      },
+      "detail": "Legacy host quarkus:dev (conflicts with Compose osb-bff on :8081)"
+    },
+    {
+      "label": "quarkus:bff:no-auth",
+      "type": "shell",
+      "command": "./mvnw -pl osb-bff -am quarkus:dev -Dquarkus.console.enabled=false -Dquarkus.profile=no-auth",
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "isBackground": true,
+      "problemMatcher": {
+        "owner": "quarkus-bff-noauth",
+        "pattern": { "regexp": "^$" },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*",
+          "endsPattern": ".*(Listening on:|started in ).*"
+        }
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "group": "osb"
+      }
+    },
+    {
+      "label": "osb:app-stack-local-dev",
+      "dependsOrder": "parallel",
+      "dependsOn": ["quarkus:api", "quarkus:bff"],
+      "problemMatcher": [],
+      "detail": "Host quarkus:dev only — stop Compose apps first (osb:stop-app-stack)"
+    },
+    {
+      "label": "osb:full-stack",
+      "dependsOrder": "sequence",
+      "dependsOn": ["osb:stop-app-stack", "devservices:up"],
+      "problemMatcher": [],
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "detail": "Build images + start full Compose stack (infra + api + bff)"
+    },
+    {
+      "label": "osb:app-stack-fresh",
+      "dependsOrder": "sequence",
+      "dependsOn": ["osb:stop-app-stack", "compose:apps-up"],
+      "problemMatcher": [],
+      "detail": "Rebuild/restart Compose osb-api + osb-bff only"
+    },
+    {
+      "label": "osb:app-stack-local-dev-no-auth",
+      "dependsOrder": "parallel",
+      "dependsOn": ["quarkus:api", "quarkus:bff:no-auth"],
+      "problemMatcher": [],
+      "detail": "Host quarkus:dev with BFF no-auth (stop Compose apps first)"
+    }
+  ]
+}

@@ -1,0 +1,16 @@
+# Pull published JVM images from GHCR instead of building locally.
+# Usage (from osb-devservices/):
+#   docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml pull
+#   docker compose --env-file .env -f docker-compose.yml -f docker-compose.ghcr.yml up -d --no-build --wait
+#
+# Override tags via OSB_API_IMAGE / OSB_BFF_IMAGE in .env if needed.
+services:
+  osb-api:
+    image: ${OSB_API_IMAGE:-ghcr.io/eumicro/osb-api/osb-api:latest}
+    pull_policy: always
+    build: !reset null
+
+  osb-bff:
+    image: ${OSB_BFF_IMAGE:-ghcr.io/eumicro/osb-api/osb-bff:latest}
+    pull_policy: always
+    build: !reset null

@@ -1,0 +1,14 @@
+{
+  "name": "n8n-nodes-osb",
+  "version": "0.1.0",
+  "description": "OSB infrastructure client nodes (Git, Kubernetes, HTTP)",
+  "license": "MIT",
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "nodes": [
+      "nodes/OsbGit/OsbGit.node.js",
+      "nodes/OsbKubernetes/OsbKubernetes.node.js",
+      "nodes/OsbHttp/OsbHttp.node.js"
+    ]
+  }
+}

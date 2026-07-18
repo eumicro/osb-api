@@ -1,0 +1,199 @@
+{
+  "realm": "osb",
+  "enabled": true,
+  "sslRequired": "external",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "browserSecurityHeaders": {
+    "contentSecurityPolicyReportOnly": "",
+    "xContentTypeOptions": "nosniff",
+    "xRobotsTag": "none",
+    "xFrameOptions": "",
+    "contentSecurityPolicy": "frame-src 'self'; frame-ancestors 'self' http://localhost:8081 http://127.0.0.1:8081 http://localhost:5678 http://127.0.0.1:5678; object-src 'none';",
+    "xssProtection": "1; mode=block",
+    "strictTransportSecurity": "max-age=31536000; includeSubDomains"
+  },
+  "roles": {
+    "realm": [
+      { "name": "catalog:read", "description": "Read catalogs" },
+      { "name": "catalog:write", "description": "Manage catalogs" },
+      { "name": "offering:read", "description": "Read offerings" },
+      { "name": "offering:write", "description": "Manage offerings" },
+      { "name": "plan:read", "description": "Read plans" },
+      { "name": "plan:write", "description": "Manage plans" },
+      { "name": "instance:read", "description": "Read service instances" },
+      { "name": "instance:provision", "description": "Provision service instances" },
+      { "name": "instance:deprovision", "description": "Deprovision service instances" },
+      { "name": "platform-client:read", "description": "Read platform clients" },
+      { "name": "platform-client:write", "description": "Manage platform clients" }
+    ]
+  },
+  "groups": [
+    {
+      "name": "osb-operators",
+      "realmRoles": [
+        "catalog:read",
+        "catalog:write",
+        "offering:read",
+        "offering:write",
+        "plan:read",
+        "plan:write",
+        "instance:read",
+        "instance:provision",
+        "instance:deprovision",
+        "platform-client:read",
+        "platform-client:write"
+      ]
+    },
+    {
+      "name": "osb-viewers",
+      "realmRoles": [
+        "catalog:read",
+        "offering:read",
+        "plan:read",
+        "instance:read",
+        "platform-client:read"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "alice",
+      "enabled": true,
+      "email": "alice@osb.local",
+      "emailVerified": true,
+      "firstName": "Alice",
+      "lastName": "Operator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "alice",
+          "temporary": false
+        }
+      ],
+      "groups": ["/osb-operators"]
+    },
+    {
+      "username": "operator",
+      "enabled": true,
+      "email": "operator@osb.local",
+      "emailVerified": true,
+      "firstName": "OSB",
+      "lastName": "Operator",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "operator",
+          "temporary": false
+        }
+      ],
+      "groups": ["/osb-operators"]
+    },
+    {
+      "username": "viewer",
+      "enabled": true,
+      "email": "viewer@osb.local",
+      "emailVerified": true,
+      "firstName": "OSB",
+      "lastName": "Viewer",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "viewer",
+          "temporary": false
+        }
+      ],
+      "groups": ["/osb-viewers"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "osb-api",
+      "name": "OSB API",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "osb-api-dev-secret",
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8080/*",
+        "http://127.0.0.1:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+        "+"
+      ]
+    },
+    {
+      "clientId": "osb-bff",
+      "name": "OSB BFF",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "osb-bff-dev-secret",
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8081/*",
+        "http://127.0.0.1:8081/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "+"
+      ]
+    },
+    {
+      "clientId": "osb-ui",
+      "name": "OSB UI",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "redirectUris": [
+        "http://localhost:8081/*",
+        "http://127.0.0.1:8081/*",
+        "http://localhost:5173/*",
+        "http://127.0.0.1:5173/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8081",
+        "http://127.0.0.1:8081",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "+"
+      ]
+    },
+    {
+      "clientId": "osb-n8n",
+      "name": "OSB n8n Editor",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "osb-n8n-dev-secret",
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "standardFlowEnabled": true,
+      "attributes": {
+        "pkce.code.challenge.method": ""
+      },
+      "redirectUris": [
+        "http://localhost:5678/auth/oidc/callback",
+        "http://127.0.0.1:5678/auth/oidc/callback"
+      ],
+      "webOrigins": [
+        "http://localhost:5678",
+        "http://127.0.0.1:5678",
+        "+"
+      ]
+    }
+  ]
+}

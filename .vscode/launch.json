@@ -1,0 +1,78 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Debug osb-api (Attach :5005)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "osb-api"
+    },
+    {
+      "type": "java",
+      "name": "Debug osb-bff (Attach :5006)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5006,
+      "projectName": "osb-bff"
+    },
+    {
+      "type": "pwa-chrome",
+      "name": "Chrome: OSB UI (BFF)",
+      "request": "launch",
+      "url": "http://127.0.0.1:8081",
+      "webRoot": "${workspaceFolder}/frontend"
+    }
+  ],
+  "compounds": [
+    {
+      "name": "OSB Full Stack",
+      "configurations": [
+        "Debug osb-api (Attach :5005)",
+        "Debug osb-bff (Attach :5006)",
+        "Chrome: OSB UI (BFF)"
+      ],
+      "preLaunchTask": "osb:full-stack",
+      "postDebugTask": "osb:stop-app-stack",
+      "stopAll": true,
+      "presentation": {
+        "order": 1,
+        "group": "osb",
+        "hidden": false
+      }
+    },
+    {
+      "name": "OSB App Stack (Compose apps only)",
+      "configurations": [
+        "Debug osb-api (Attach :5005)",
+        "Debug osb-bff (Attach :5006)",
+        "Chrome: OSB UI (BFF)"
+      ],
+      "preLaunchTask": "osb:app-stack-fresh",
+      "postDebugTask": "osb:stop-app-stack",
+      "stopAll": true,
+      "presentation": {
+        "order": 2,
+        "group": "osb",
+        "hidden": false
+      }
+    },
+    {
+      "name": "OSB Local Dev (quarkus:dev on host)",
+      "configurations": [
+        "Debug osb-api (Attach :5005)",
+        "Debug osb-bff (Attach :5006)",
+        "Chrome: OSB UI (BFF)"
+      ],
+      "preLaunchTask": "osb:app-stack-local-dev",
+      "postDebugTask": "osb:stop-app-stack",
+      "stopAll": true,
+      "presentation": {
+        "order": 3,
+        "group": "osb",
+        "hidden": false
+      }
+    }
+  ]
+}

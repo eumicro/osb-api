@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>io.osb</groupId>
+        <artifactId>osb-parent</artifactId>
+        <version>0.1.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>osb-api</artifactId>
+    <name>osb-api</name>
+    <description>Quarkus API delivery module (OSB + Admin)</description>
+
+    <dependencies>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-workflow</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-workflow-n8n</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-auth2</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-infrastructure-persistence</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-infrastructure-git</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-infrastructure-kubernetes</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.osb</groupId>
+            <artifactId>osb-infrastructure-http-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-rest-jackson</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-arc</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-smallrye-health</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.quarkus</groupId>
+            <artifactId>quarkus-junit5</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.rest-assured</groupId>
+            <artifactId>rest-assured</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>${quarkus.platform.group-id}</groupId>
+                <artifactId>quarkus-maven-plugin</artifactId>
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>build</goal>
+                            <goal>generate-code</goal>
+                            <goal>generate-code-tests</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+</project>

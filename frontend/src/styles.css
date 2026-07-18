@@ -1,0 +1,366 @@
+:root,
+[data-theme="light"] {
+  --bg: #f6f7fb;
+  --surface: #ffffff;
+  --border: #e2e6ef;
+  --text: #1d2433;
+  --muted: #6b7385;
+  --accent: #3554d1;
+  --accent-soft: #e8edff;
+  --danger: #c0392b;
+  --ok: #1f8a5b;
+  --warn: #c9852a;
+  --error-bg: #fdecea;
+  --error-border: #f5c6c0;
+  --shadow: rgba(0, 0, 0, 0.12);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --bg: #1a1b26;
+  --surface: #24283b;
+  --border: #3b4261;
+  --text: #c0caf5;
+  --muted: #9aa5ce;
+  --accent: #7aa2f7;
+  --accent-soft: #2f3549;
+  --danger: #f7768e;
+  --ok: #3ecf8e;
+  --warn: #e0af68;
+  --error-bg: #3b2028;
+  --error-border: #5c3040;
+  --shadow: rgba(0, 0, 0, 0.45);
+  color-scheme: dark;
+}
+
+:root {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.error {
+  color: var(--danger);
+  background: var(--error-bg);
+  border: 1px solid var(--error-border);
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.8rem;
+}
+
+.workspace-layout {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 0.5rem 1rem;
+}
+
+.topbar .brand {
+  font-weight: 700;
+  font-size: 1.05rem;
+}
+
+.topbar .spacer {
+  flex: 1;
+}
+
+.menu {
+  position: relative;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 1000;
+  min-width: 220px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 20px var(--shadow);
+  padding: 0.4rem;
+}
+
+.dropdown.align-end {
+  left: auto;
+  right: 0;
+}
+
+.dropdown hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 0.3rem 0;
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.dropdown-item:hover {
+  background: var(--accent-soft);
+}
+
+.dropdown-item.as-text {
+  background: none;
+  color: var(--text);
+  border: none;
+  text-align: left;
+}
+
+.view-dropdown {
+  min-width: 280px;
+}
+
+.dropdown-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.dropdown-heading {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 0.25rem 0.5rem 0.15rem;
+}
+
+.view-item.active {
+  font-weight: 600;
+  background: var(--accent-soft);
+}
+
+.view-marker {
+  display: inline-block;
+  width: 1rem;
+  text-align: center;
+  color: var(--accent);
+}
+
+.danger-text {
+  color: var(--danger);
+}
+
+.dialog-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.dialog-surface {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  display: flex;
+  flex-direction: column;
+  max-height: min(85vh, 900px);
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  box-shadow: 0 16px 48px var(--shadow);
+  overflow: hidden;
+}
+
+.dialog-size-sm {
+  width: min(92vw, 420px);
+}
+
+.dialog-size-md {
+  width: min(92vw, 560px);
+}
+
+.dialog-size-lg {
+  width: min(92vw, 760px);
+}
+
+.dialog-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--border);
+  cursor: grab;
+  user-select: none;
+}
+
+.dialog-dragging .dialog-header {
+  cursor: grabbing;
+}
+
+.dialog-title {
+  flex: 1;
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.dialog-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0;
+}
+
+.dialog-close:hover {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.dialog-body {
+  flex: 1;
+  overflow: auto;
+  padding: 1rem 1.1rem;
+}
+
+.dialog-footer {
+  padding: 0.75rem 1.1rem 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.dialog-message {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.workspace-dock {
+  flex: 1;
+  min-height: 0;
+  background: var(--bg);
+}
+
+.workspace-dockview {
+  width: 100%;
+  height: 100%;
+}
+
+.panel-body {
+  height: 100%;
+  overflow: auto;
+  padding: 0.75rem 1rem;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.panel-body:has(> .base-details),
+.panel-body:has(> .base-list),
+.workflow-config:has(> .base-details),
+.template-config:has(> .base-details) {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.panel-body > .base-details,
+.panel-body > .base-list,
+.workflow-config > .base-details,
+.template-config > .base-details {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.panel-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 0.75rem;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0.5rem;
+  text-align: left;
+}
+
+.data-table th {
+  color: var(--muted);
+  font-weight: 600;
+}
+
+tr.selectable {
+  cursor: pointer;
+}
+
+tr.selectable:hover,
+tr.selectable.selected {
+  background: var(--accent-soft);
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 0.7rem;
+  padding: 1rem 1.1rem;
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+.card h2 {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+
+.card .section-title {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.92rem;
+  color: var(--muted);
+  font-weight: 600;
+}

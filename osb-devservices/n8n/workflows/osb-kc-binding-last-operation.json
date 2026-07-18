@@ -1,0 +1,84 @@
+{
+  "id": "osbWfKcBindingLastOp",
+  "name": "OSB Keycloak Binding Last Operation",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-kc-binding-last-operation",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfKcBindingLastOp",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-kc-binding-last-operation"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-kc-client-get",
+        "clientId": "http-keycloak-admin"
+      },
+      "id": "ClientosbWfKcBindingLastOp",
+      "name": "OSB HTTP",
+      "type": "CUSTOM.osbHttp",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'BINDING_LAST_OPERATION', operationId: $json.operationId, scenario: 'kc', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfKcBindingLastOp",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB HTTP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB HTTP": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}

@@ -1,0 +1,9 @@
+{
+  "recommendations": [
+    "vscjava.vscode-java-pack",
+    "redhat.vscode-quarkus",
+    "vscjava.vscode-java-debug",
+    "ms-azuretools.vscode-docker",
+    "Vue.volar"
+  ]
+}

@@ -1,0 +1,84 @@
+{
+  "id": "osbWfGitUpdate",
+  "name": "OSB Git Update",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "osb-git-update",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "WebhookosbWfGitUpdate",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ],
+      "webhookId": "osb-git-update"
+    },
+    {
+      "parameters": {
+        "templateId": "tpl-git-instance-file",
+        "clientId": "git-demo-templates"
+      },
+      "id": "ClientosbWfGitUpdate",
+      "name": "OSB Git",
+      "type": "CUSTOM.osbGit",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ { ok: true, kind: 'UPDATE', operationId: $json.operationId, scenario: 'git', last: $json.clientResult } }}",
+        "options": {}
+      },
+      "id": "RespondosbWfGitUpdate",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        760,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "OSB Git",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OSB Git": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "tags": []
+}
