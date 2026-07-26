@@ -8,6 +8,8 @@ kubeVersion: '>=1.25.0-0'
 home: https://github.com/eumicro/osb-api
 sources:
   - https://github.com/eumicro/osb-api
+annotations:
+  licenses: MIT
 keywords:
   - osb
   - service-broker

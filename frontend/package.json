@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.1",
   "description": "OSB-API Management UI",
+  "license": "MIT",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -13,9 +14,9 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
-    "@jsonschema-editor/json-schema-extensions": "^0.1.11",
-    "@jsonschema-editor/vue": "^0.1.11",
-    "@jsonschema-editor/vue-extensions": "^0.1.11",
+    "@jsonschema-editor/json-schema-extensions": "^0.1.12",
+    "@jsonschema-editor/vue": "^0.1.12",
+    "@jsonschema-editor/vue-extensions": "^0.1.12",
     "dockview-vue": "^7.0.2",
     "monaco-editor": "^0.55.1",
     "vue": "^3.5.13",

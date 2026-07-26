@@ -7,7 +7,7 @@ export default {
   },
   common: {
     reload: "Neu laden",
-    loading: "Laedt…",
+    loading: "Lädt…",
     actions: "Aktionen",
     status: "Status",
     version: "Version",
@@ -20,7 +20,7 @@ export default {
     cancel: "Abbrechen",
     create: "Anlegen",
     save: "Speichern",
-    delete: "Loeschen",
+    delete: "Löschen",
     edit: "Bearbeiten",
     id: "ID",
     generateUuid: "UUID erzeugen",
