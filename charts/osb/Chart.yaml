@@ -2,8 +2,8 @@ apiVersion: v2
 name: osb
 description: Open Service Broker API + Admin BFF/UI for Kubernetes (dogfood)
 type: application
-version: 0.1.1
-appVersion: 0.1.1
+version: 0.1.2-SNAPSHOT
+appVersion: 0.1.2-SNAPSHOT
 kubeVersion: '>=1.25.0-0'
 home: https://github.com/eumicro/osb-api
 sources:
