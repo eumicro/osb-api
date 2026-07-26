@@ -8,6 +8,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are generated automatically from [Conventional Commits](https://www.conventionalcommits.org/)
 by [Release Please](https://github.com/googleapis/release-please). See [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.1.2](https://github.com/eumicro/osb-api/compare/v0.1.1...v0.1.2) (2026-07-26)
+
+
+### Bug Fixes
+
+* bump jsonschema-editor 0.1.12 and declare MIT license ([8f108b1](https://github.com/eumicro/osb-api/commit/8f108b1a1b1a36532602fa707af9c04be44c5dda))
+* **i18n:** correct German umlauts and bump jsonschema-editor ([9112ca2](https://github.com/eumicro/osb-api/commit/9112ca2faef8b7106653fbc1ae8825475e8d6528))
+* publish Helm chart to GHCR on release workflow_call ([8368bd5](https://github.com/eumicro/osb-api/commit/8368bd5c20768fbe1e33c91e4b9c1a28e24d8f3b))
+* publish SemVer tags for container images on release ([7c33ad1](https://github.com/eumicro/osb-api/commit/7c33ad1fb4365db3da8f99866a541b04e2a7cf31))
+* push Helm OCI chart when Release Please calls workflow ([c242d54](https://github.com/eumicro/osb-api/commit/c242d5426ff909399cb5ca0ec2387b0cde527c28))
+* tag GHCR images with SemVer on Release Please workflow_call ([a843568](https://github.com/eumicro/osb-api/commit/a843568a5b1b3b6f7de7ec90d1a2868f2b4e0ed8))
+
+
+### Documentation
+
+* point GHCR pull examples at 0.1.1 ([4647299](https://github.com/eumicro/osb-api/commit/4647299b91cc69a50b7eb2731948a52eaf91b84d))
+
+
+### Miscellaneous
+
+* **main:** release 0.1.2-SNAPSHOT ([a7ee2db](https://github.com/eumicro/osb-api/commit/a7ee2dbf47b1b34ef354680836326a871a67feac))
+* **main:** release 0.1.2-SNAPSHOT ([ab4cbcb](https://github.com/eumicro/osb-api/commit/ab4cbcbc89d974d0c83ce5431d0a65d4e3ba6780))
+
 ## [0.1.1](https://github.com/eumicro/osb-api/compare/v0.1.0...v0.1.1) (2026-07-18)
 
 
