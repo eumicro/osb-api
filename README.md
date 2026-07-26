@@ -312,4 +312,6 @@ This records a calm tour: Views menu + Panels menu (read-only), then your existi
 
 ## License
 
-License not yet declared in this repository.
+This project is licensed under the [MIT License](LICENSE).
+
+Third-party runtime dependencies keep their own licenses. In particular, **n8n** is distributed under the [Sustainable Use License](https://github.com/n8n-io/n8n/blob/master/LICENSE.md), not MIT.
