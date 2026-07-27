@@ -8,6 +8,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are generated automatically from [Conventional Commits](https://www.conventionalcommits.org/)
 by [Release Please](https://github.com/googleapis/release-please). See [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.1.3](https://github.com/eumicro/osb-api/compare/v0.1.2...v0.1.3) (2026-07-27)
+
+
+### Features
+
+* platform Basic Auth, SecretStore credentials, and OSB instance API ([#16](https://github.com/eumicro/osb-api/issues/16)) ([a6803ec](https://github.com/eumicro/osb-api/commit/a6803ec19fae1d7f4b10a14784d0b652d330778f))
+
+
+### Documentation
+
+* add funding, security, contributing and package meta ([b4efd9d](https://github.com/eumicro/osb-api/commit/b4efd9df4b964b19cfd2d7507aab7c949fb4b915))
+* add funding, security, contributing and package meta ([caee909](https://github.com/eumicro/osb-api/commit/caee909c51d0a148a026245241761affe28a09c8))
+
+
+### Miscellaneous
+
+* **main:** release 0.1.3-SNAPSHOT ([#18](https://github.com/eumicro/osb-api/issues/18)) ([7869882](https://github.com/eumicro/osb-api/commit/78698824e572e8265614528d4f40ee693f644499))
+
 ## [0.1.2](https://github.com/eumicro/osb-api/compare/v0.1.1...v0.1.2) (2026-07-26)
 
 
