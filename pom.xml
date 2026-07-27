@@ -9,6 +9,7 @@
 
     <name>OSB-API Parent</name>
     <description>Open Service Broker API – Modular Clean Architecture Skeleton</description>
+    <url>https://github.com/eumicro/osb-api</url>
 
     <licenses>
         <license>
@@ -17,6 +18,25 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <developers>
+        <developer>
+            <id>eumicro</id>
+            <name>Eugen Lange</name>
+            <url>https://github.com/eumicro</url>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://github.com/eumicro/osb-api</url>
+        <connection>scm:git:https://github.com/eumicro/osb-api.git</connection>
+        <developerConnection>scm:git:ssh://git@github.com/eumicro/osb-api.git</developerConnection>
+    </scm>
+
+    <issueManagement>
+        <system>GitHub</system>
+        <url>https://github.com/eumicro/osb-api/issues</url>
+    </issueManagement>
 
     <modules>
         <module>osb</module>
