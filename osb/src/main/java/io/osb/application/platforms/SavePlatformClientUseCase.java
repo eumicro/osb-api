@@ -3,6 +3,8 @@ package io.osb.application.platforms;
 import io.osb.domain.catalog.CatalogRepository;
 import io.osb.domain.platforms.PlatformClient;
 import io.osb.domain.platforms.PlatformClientRepository;
+import io.osb.domain.secrets.SecretRefs;
+import io.osb.domain.secrets.SecretStore;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -10,27 +12,38 @@ public final class SavePlatformClientUseCase {
 
     private final PlatformClientRepository platformClientRepository;
     private final CatalogRepository catalogRepository;
+    private final SecretStore secretStore;
 
     public SavePlatformClientUseCase(
             PlatformClientRepository platformClientRepository,
-            CatalogRepository catalogRepository) {
+            CatalogRepository catalogRepository,
+            SecretStore secretStore) {
         this.platformClientRepository =
                 Objects.requireNonNull(platformClientRepository, "platformClientRepository");
         this.catalogRepository = Objects.requireNonNull(catalogRepository, "catalogRepository");
+        this.secretStore = Objects.requireNonNull(secretStore, "secretStore");
     }
 
     public PlatformClient create(
             String displayName,
             String username,
             String catalogId,
+            String password,
             boolean enabled) {
         requireCatalog(catalogId);
-        PlatformClient created = new PlatformClient(
-                "platform-" + UUID.randomUUID().toString().substring(0, 8),
-                displayName,
-                username,
-                catalogId,
-                enabled);
+        if (password == null || password.isBlank()) {
+            throw new IllegalArgumentException("password is required");
+        }
+        platformClientRepository
+                .findByUsername(username)
+                .ifPresent(other -> {
+                    throw new IllegalArgumentException("username already in use: " + username);
+                });
+        String id = "platform-" + UUID.randomUUID().toString().substring(0, 8);
+        String passwordRef = SecretRefs.platformPassword(id);
+        secretStore.put(passwordRef, password);
+        PlatformClient created =
+                new PlatformClient(id, displayName, username, catalogId, passwordRef, enabled);
         platformClientRepository.save(created);
         return created;
     }
@@ -40,6 +53,8 @@ public final class SavePlatformClientUseCase {
             String displayName,
             String username,
             String catalogId,
+            String password,
+            boolean keepExistingPassword,
             boolean enabled) {
         requireCatalog(catalogId);
         PlatformClient existing = platformClientRepository
@@ -51,7 +66,20 @@ public final class SavePlatformClientUseCase {
                 .ifPresent(other -> {
                     throw new IllegalArgumentException("username already in use: " + username);
                 });
-        PlatformClient updated = existing.withDetails(displayName, username, catalogId, enabled);
+        String passwordRef;
+        if (keepExistingPassword || password == null || password.isBlank()) {
+            passwordRef = existing.passwordRef();
+            if (passwordRef == null || passwordRef.isBlank()) {
+                throw new IllegalArgumentException("password is required");
+            }
+        } else {
+            passwordRef = (existing.passwordRef() != null && SecretRefs.isRef(existing.passwordRef()))
+                    ? existing.passwordRef()
+                    : SecretRefs.platformPassword(id);
+            secretStore.put(passwordRef, password);
+        }
+        PlatformClient updated =
+                existing.withDetails(displayName, username, catalogId, passwordRef, enabled);
         platformClientRepository.save(updated);
         return updated;
     }

@@ -98,6 +98,9 @@ public final class HttpClientInstance {
         return username;
     }
 
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} to the BASIC/BEARER credential (not plaintext).
+     */
     public String secret() {
         return secret;
     }
@@ -106,6 +109,9 @@ public final class HttpClientInstance {
         return oauthClientId;
     }
 
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} to the OAuth client secret (not plaintext).
+     */
     public String oauthClientSecret() {
         return oauthClientSecret;
     }

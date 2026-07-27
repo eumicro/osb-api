@@ -242,6 +242,7 @@ flowchart TB
 | **osb-infrastructure-git** | Git-Client | Clone/Commit/Push/Pull, später UI-Commands | Domain-Invarianten |
 | **osb-infrastructure-kubernetes** | K8s-Client | CRUD/Watch/Status von Resources; später UI-Commands | Workflow-Orchestrierung |
 | **osb-infrastructure-http-client** | Konfigurierbare HTTP-Netze | Client-Pools, Auth-Profiles, Targets für Provisionierung | Katalog-Regeln |
+| **osb-infrastructure-secrets** | SecretStore-Adapter | OpenBao KV v2, In-Memory (Dev/Tests); Client-Credential-Refs | Domain-Invarianten |
 | **osb-workflow-n8n** | n8n-Anbindung | Start Workflow, Status/Callback, Mapping auf Workflow-Port | UI |
 | **osb-auth2** | Authentifizierung & Rechte | Platform-Credentials, OIDC/Keycloak, Gruppen→Permissions | Provisionierungs­logik |
 
@@ -254,7 +255,8 @@ flowchart TB
 | `ServicePlan` | Schemas, free/bindable-Overrides, async-Anforderungen |
 | `ServiceInstance` | Lifecycle-Zustände, Parameter, MaintenanceInfo, Zuordnung PlatformClient |
 | `ServiceBinding` | Credentials/Lifecycle, Rotation (falls unterstützt) |
-| `PlatformClient` | Identität der Platform, Credentials, erlaubte Catalog-Scopes |
+| `PlatformClient` | Identität der Platform, Catalog-Scope (`catalogId`), Basic-Auth-Passwort in `SecretStore` (`passwordRef`) |
+| `HttpClientInstance` / `GitClientInstance` / `KubernetesClientInstance` | Infra-Clients; Secrets nur als `SecretRefs` in Postgres, Werte in OpenBao/`SecretStore` |
 | `Operation` | Async-Operation-Id, Status (`in progress` / `succeeded` / `failed`), Korrelation zum Workflow |
 
 Verhalten liegt an den Aggregates/Domain Services (z. B. `instance.requestProvision(...)`, `instance.completeOperation(...)`), nicht in „dummen“ Getter/Setter-DTOs.
@@ -435,7 +437,7 @@ Beispielhafte Permissions (Ziel):
 ### 8.5 Multi-Platform
 
 - Mehrere `PlatformClient`-Aggregate  
-- Catalog kann gefiltert/gescopet pro Platform erfolgen (Produktentscheidung TBD)  
+- Catalog-Scoping: jeder Platform-Client hat genau ein `catalogId`; `GET /v2/catalog` und Instance-Lifecycle sind auf Offerings dieses Catalogs beschränkt  
 - Instance speichert Herkunft (`platformClientId`, Originating Identity falls vorhanden)
 
 ### 8.6 Observability
@@ -563,6 +565,7 @@ com.example.osb:osb-infrastructure-persistence
 com.example.osb:osb-infrastructure-git
 com.example.osb:osb-infrastructure-kubernetes
 com.example.osb:osb-infrastructure-http-client
+com.example.osb:osb-infrastructure-secrets
 ```
 
 GroupId/Package-Namespace sind **TBD**.
@@ -573,9 +576,9 @@ GroupId/Package-Namespace sind **TBD**.
 - [ ] DB-Produkt und Migrations-Tool (Flyway/Liquibase)  
 - [ ] Ob Application Layer in `osb` oder eigenes Modul `osb-application`  
 - [ ] Binding-Support im MVP: ja/nein  
-- [ ] Catalog-Scoping pro Platform  
+- [x] Catalog-Scoping pro Platform (`PlatformClient.catalogId` + Auth)  
 - [ ] Callback- vs. Poll-Modell für n8n  
-- [ ] Secret-Handling (Credentials in Bindings, Platform-Passwörter)  
+- [x] Secret-Handling für Git/HTTP/K8s/Platform-Client-Credentials (`SecretStore` + OpenBao; Bindings Follow-up)  
 - [ ] Package-/Repo-Struktur Frontend Monorepo vs. getrennt  
 - [ ] CI-Gates: ArchUnit, Spec-Contract-Tests  
 
@@ -583,4 +586,6 @@ GroupId/Package-Namespace sind **TBD**.
 
 | Version | Datum | Änderung |
 | --- | --- | --- |
+| 0.1.2 | 2026-07-27 | Platform Basic Auth + SecretStore, OSB `/v2/service_instances`, Catalog-Scoping |
+| 0.1.1 | 2026-07-27 | Client-Credential SecretStore (OpenBao), Modul `osb-infrastructure-secrets` |
 | 0.1.0 | 2026-07-18 | Erstes Zielbild als arc42 aus Projektbriefing |

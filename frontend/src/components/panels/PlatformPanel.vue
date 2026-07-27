@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { DockviewPanelApi } from "dockview-vue";
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { useI18n } from "vue-i18n";
 import { useCatalogs } from "../../controllers/useCatalogs";
 import { useConfirm } from "../../controllers/useConfirm";
@@ -8,7 +8,11 @@ import { usePlatformDetail } from "../../controllers/usePlatformDetail";
 import type { UpdatePlatformClientRequest } from "../../models/platformClient";
 import { applyPlatformSelection } from "../../stores/selectionSync";
 import type { PlatformPanelParams } from "../../stores/workspaceLayout";
-import { workspace } from "../../stores/workspace";
+import {
+  clearRevealedPlatformPassword,
+  setRevealedPlatformPassword,
+  workspace,
+} from "../../stores/workspace";
 import DeleteButton from "../molecules/DeleteButton.vue";
 import BaseDetailsLayout from "../organisms/BaseDetailsLayout.vue";
 import PlatformDetailForm from "../organisms/PlatformDetailForm.vue";
@@ -35,6 +39,13 @@ const { platform, loading, error, save, remove } = usePlatformDetail(boundPlatfo
   syncWorkspace: !isBoundTab.value,
 });
 
+const revealedPassword = computed(() => {
+  const handoff = workspace.revealedPlatformPassword;
+  const id = boundPlatformId();
+  if (!handoff || !id || handoff.platformId !== id) return null;
+  return handoff.password;
+});
+
 const meta = computed(() => {
   if (!platform.value) return undefined;
   return `${platform.value.username} → ${platform.value.catalogId}`;
@@ -44,12 +55,27 @@ const empty = computed(() =>
   !boundPlatformId() ? t("platform.selectPlatform") : undefined,
 );
 
+watch(
+  () => boundPlatformId(),
+  (id, prev) => {
+    if (id !== prev
+      && workspace.revealedPlatformPassword
+      && workspace.revealedPlatformPassword.platformId !== id) {
+      clearRevealedPlatformPassword();
+    }
+  },
+);
+
 onMounted(() => {
   void loadCatalogs();
 });
 
 async function onSave(request: UpdatePlatformClientRequest) {
-  await save(request);
+  const id = boundPlatformId();
+  const ok = await save(request);
+  if (ok && id && request.password) {
+    setRevealedPlatformPassword(id, request.password);
+  }
 }
 
 function onSubmit() {
@@ -66,6 +92,7 @@ async function onDelete() {
   });
   if (!confirmed) return;
   await remove();
+  clearRevealedPlatformPassword();
   if (isBoundTab.value) {
     dockview.params?.api?.close();
     return;
@@ -89,6 +116,7 @@ async function onDelete() {
         ref="formRef"
         :platform="platform"
         :catalogs="catalogs"
+        :revealed-password="revealedPassword"
         @save="onSave"
       />
       <template #actions>

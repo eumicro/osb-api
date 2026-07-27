@@ -6,7 +6,7 @@ Local development stack: **Postgres**, **Keycloak**, **n8n**, **Gitea**, **osb-a
 
 - Docker **or** Podman (Compose plugin/compatible)
 - Bash
-- Free ports: `5432`, `8180`, `5678`, `3000`, `8080`, `8081`, `5005`, `5006`, `6443`
+- Free ports: `5432`, `8180`, `5678`, `3000`, `8080`, `8081`, `5005`, `5006`, `8200`, `6443`
 - For Kind (optional but needed for K8s Realtests): [`kind`](https://kind.sigs.k8s.io/) + [`kubectl`](https://kubernetes.io/docs/tasks/tools/)
   - With Podman: Kind uses `KIND_EXPERIMENTAL_PROVIDER=podman`
   - **Windows/WSL:** Kind requires a **rootful** Podman machine (`podman machine set --rootful`). Rootless fails with `ip6tables` / `Operation not permitted`.
@@ -67,6 +67,7 @@ In Cursor/VS Code: task **`devservices:up`** or compound launch **`OSB Full Stac
 | Service | URL / Connection | Defaults |
 | --- | --- | --- |
 | Postgres | `localhost:5432` / DB `osb` | User/Pass: `osb` / `osb` |
+| OpenBao | http://localhost:8200 | Dev root token: `osb-root` (`OSB_OPENBAO_TOKEN`); KV mount `secret` |
 | Keycloak | http://localhost:8180 | Admin: `admin` / `admin` |
 | Keycloak Realm | http://localhost:8180/realms/osb | Users: `operator`/`operator`, `viewer`/`viewer` |
 | n8n | http://localhost:5678 | Keycloak SSO (`osb-n8n`), embedded in OSB Admin → Workflow detail. **Node picker locked** to Webhook, Respond to Webhook, OSB Git/Kubernetes/HTTP (see `NODES_INCLUDE` in `docker-compose.yml`). Seed workflows in `n8n/workflows/`. Recreate after OIDC/node changes: `podman compose up -d --force-recreate n8n`. |

@@ -5,16 +5,19 @@ import type { PlatformClient, UpdatePlatformClientRequest } from "../../models/p
 import BaseInput from "../atoms/BaseInput.vue";
 import BaseSelect from "../atoms/BaseSelect.vue";
 import FormField from "../molecules/FormField.vue";
+import PlatformConnectionInfo from "./PlatformConnectionInfo.vue";
 
 const props = defineProps<{
   platform: PlatformClient;
   catalogs: AdminCatalog[];
+  revealedPassword: string | null;
 }>();
 const emit = defineEmits<{ save: [request: UpdatePlatformClientRequest] }>();
 
 const displayName = ref(props.platform.displayName);
 const username = ref(props.platform.username);
 const catalogId = ref(props.platform.catalogId);
+const password = ref("");
 const enabled = ref(props.platform.enabled);
 
 watch(
@@ -23,17 +26,22 @@ watch(
     displayName.value = platform.displayName;
     username.value = platform.username;
     catalogId.value = platform.catalogId;
+    password.value = "";
     enabled.value = platform.enabled;
   },
 );
 
 function submit() {
-  emit("save", {
+  const request: UpdatePlatformClientRequest = {
     displayName: displayName.value.trim(),
     username: username.value.trim(),
     catalogId: catalogId.value,
     enabled: enabled.value,
-  });
+  };
+  if (password.value) {
+    request.password = password.value;
+  }
+  emit("save", request);
 }
 
 defineExpose({ submit });
@@ -50,6 +58,19 @@ defineExpose({ submit });
     <FormField :label="$t('platforms.username')">
       <BaseInput v-model="username" required />
     </FormField>
+    <FormField :label="$t('platforms.password')">
+      <BaseInput
+        v-model="password"
+        type="password"
+        autocomplete="new-password"
+        :placeholder="
+          platform.passwordConfigured
+            ? $t('platforms.passwordKeepHint')
+            : $t('platforms.password')
+        "
+        :required="!platform.passwordConfigured"
+      />
+    </FormField>
     <FormField :label="$t('platforms.catalog')">
       <BaseSelect v-model="catalogId" required>
         <option v-for="catalog in catalogs" :key="catalog.id" :value="catalog.id">
@@ -62,6 +83,8 @@ defineExpose({ submit });
       <input v-model="enabled" type="checkbox" />
       {{ $t("platforms.enabled") }}
     </label>
+
+    <PlatformConnectionInfo :platform="platform" :revealed-password="revealedPassword" />
   </div>
 </template>
 
@@ -72,5 +95,11 @@ defineExpose({ submit });
   gap: 0.45rem;
   margin-bottom: 0.85rem;
   font-size: 0.9rem;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 0.75rem;
 }
 </style>

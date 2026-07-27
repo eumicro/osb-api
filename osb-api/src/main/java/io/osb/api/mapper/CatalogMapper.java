@@ -34,6 +34,7 @@ public class CatalogMapper {
                 client.displayName(),
                 client.username(),
                 client.catalogId(),
+                client.hasPassword(),
                 client.enabled());
     }
 

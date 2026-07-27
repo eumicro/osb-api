@@ -1,7 +1,7 @@
 import type { Catalog } from "../models/catalog";
 import { http } from "./http";
 
-/** Demo Basic Auth for dashboard preview of a platform-scoped OSB catalog. */
+/** Demo Basic Auth for dashboard preview of a platform-scoped OSB catalog (seeded cf-broker). */
 const DEMO_PLATFORM_AUTH = "Basic " + btoa("cf-broker:secret");
 
 export const catalogService = {

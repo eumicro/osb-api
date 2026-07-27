@@ -23,6 +23,9 @@ public class PlatformClientEntity extends PanacheEntityBase {
     @Column(name = "catalog_id", nullable = false, length = 128)
     public String catalogId;
 
+    @Column(name = "password_ref", nullable = false, columnDefinition = "TEXT")
+    public String passwordRef;
+
     @Column(nullable = false)
     public boolean enabled;
 }

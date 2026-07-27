@@ -289,6 +289,8 @@ export default {
   platforms: {
     new: "Новая платформа",
     username: "Имя пользователя",
+    password: "Пароль",
+    passwordKeepHint: "оставьте пустым, чтобы сохранить текущий пароль",
     catalog: "Каталог",
     catalogHint: "Этот каталог возвращается для платформы на GET /v2/catalog.",
     enabled: "активен",
@@ -296,6 +298,19 @@ export default {
     none: "Нет клиентов платформы.",
     hint: "Каждая платформа видит один каталог; один каталог может использоваться несколькими платформами (1:N).",
     deleteConfirm: 'Действительно удалить платформу "{id}"?',
+    connectionTitle: "Подключение для оператора платформы",
+    apiBaseUrl: "Базовый URL API брокера",
+    catalogUrl: "URL каталога",
+    apiVersionHint:
+      "HTTP Basic Auth и заголовок X-Broker-API-Version: 2.17. URL через VITE_OSB_BROKER_PUBLIC_URL.",
+    passwordHandedOff:
+      "Скопируйте пароль сейчас — он больше не будет загружен с сервера.",
+    passwordNotReadable:
+      "Пароль задан (недоступен). Сохраните новый пароль, чтобы передать его снова.",
+    passwordRequiredHint: "Пароль ещё не задан — укажите его выше и сохраните.",
+    copy: "Копировать",
+    copied: "Скопировано",
+    copyAll: "Копировать всё",
   },
   workflows: {
     new: "Новый workflow",

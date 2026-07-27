@@ -66,9 +66,23 @@ public class AdminStore {
             String planId,
             String platformClientId,
             Map<String, Object> parameters) {
-        String instanceId = "inst-" + UUID.randomUUID().toString().substring(0, 8);
+        return provision(null, serviceId, planId, platformClientId, parameters);
+    }
+
+    /**
+     * @param instanceId OSB-provided instance id; when null/blank a random admin id is generated
+     */
+    public ServiceInstanceDto provision(
+            String instanceId,
+            String serviceId,
+            String planId,
+            String platformClientId,
+            Map<String, Object> parameters) {
+        String id = (instanceId == null || instanceId.isBlank())
+                ? "inst-" + UUID.randomUUID().toString().substring(0, 8)
+                : instanceId.trim();
         ServiceInstanceDto created = new ServiceInstanceDto(
-                instanceId,
+                id,
                 serviceId,
                 planId,
                 "in progress",
@@ -84,7 +98,7 @@ public class AdminStore {
         String operationId;
         try {
             operationId = provisioningWorkflow.start(new ProvisioningCommand(
-                    instanceId, serviceId, planId, copyParameters(parameters)));
+                    id, serviceId, planId, copyParameters(parameters)));
         } catch (RuntimeException ex) {
             ServiceInstanceDto failed = withOperation(
                     created,

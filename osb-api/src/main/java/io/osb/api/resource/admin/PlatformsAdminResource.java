@@ -71,6 +71,7 @@ public class PlatformsAdminResource {
                 request.displayName(),
                 request.username(),
                 request.catalogId(),
+                request.password(),
                 request.enabled()));
         return Response.status(Response.Status.CREATED).entity(created).build();
     }
@@ -81,11 +82,14 @@ public class PlatformsAdminResource {
         if (request == null) {
             throw new IllegalArgumentException("request body is required");
         }
+        boolean keepPassword = request.password() == null || request.password().isBlank();
         return catalogMapper.toDto(savePlatformClientUseCase.update(
                 id,
                 request.displayName(),
                 request.username(),
                 request.catalogId(),
+                request.password(),
+                keepPassword,
                 request.enabled()));
     }
 

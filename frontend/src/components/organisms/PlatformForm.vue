@@ -13,6 +13,7 @@ const emit = defineEmits<{ save: [request: CreatePlatformClientRequest] }>();
 const displayName = ref("");
 const username = ref("");
 const catalogId = ref("");
+const password = ref("");
 const enabled = ref(true);
 
 watch(
@@ -28,10 +29,12 @@ function submit() {
     displayName: displayName.value.trim(),
     username: username.value.trim(),
     catalogId: catalogId.value,
+    password: password.value,
     enabled: enabled.value,
   });
   displayName.value = "";
   username.value = "";
+  password.value = "";
   enabled.value = true;
 }
 </script>
@@ -43,6 +46,9 @@ function submit() {
     </FormField>
     <FormField :label="$t('platforms.username')">
       <BaseInput v-model="username" required />
+    </FormField>
+    <FormField :label="$t('platforms.password')">
+      <BaseInput v-model="password" type="password" required autocomplete="new-password" />
     </FormField>
     <FormField :label="$t('platforms.catalog')">
       <BaseSelect v-model="catalogId" required>

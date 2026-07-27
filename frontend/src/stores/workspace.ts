@@ -29,6 +29,8 @@ export const workspace = reactive({
   selectedPlatformClientId: null as string | null,
   selectedPlatformClient: null as PlatformClient | null,
   platformRevision: 0,
+  /** One-time password handoff after create/update (never loaded from API). */
+  revealedPlatformPassword: null as { platformId: string; password: string } | null,
   selectedWorkflowId: null as string | null,
   selectedWorkflow: null as WorkflowDefinition | null,
   workflowRevision: 0,
@@ -168,6 +170,20 @@ export function selectPlatformClient(
 ) {
   workspace.selectedPlatformClientId = platformClientId;
   workspace.selectedPlatformClient = platformClientId ? platformClient : null;
+  if (
+    workspace.revealedPlatformPassword
+    && workspace.revealedPlatformPassword.platformId !== platformClientId
+  ) {
+    workspace.revealedPlatformPassword = null;
+  }
+}
+
+export function setRevealedPlatformPassword(platformId: string, password: string) {
+  workspace.revealedPlatformPassword = { platformId, password };
+}
+
+export function clearRevealedPlatformPassword() {
+  workspace.revealedPlatformPassword = null;
 }
 
 export function selectWorkflow(

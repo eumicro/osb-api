@@ -89,5 +89,6 @@ echo "n8n      : http://localhost:5678  (SSO via Keycloak client osb-n8n, users 
 echo "Gitea    : http://localhost:3000  (osb/osb)  repo osb/git-demo-templates"
 echo "osb-api  : http://localhost:8080  (debug attach :5005)"
 echo "osb-bff  : http://localhost:8081  (debug attach :5006, UI)"
+echo "OpenBao  : http://localhost:8200  (dev root token: see OSB_OPENBAO_TOKEN / osb-root)"
 echo "Kind     : https://127.0.0.1:6443  (kubeconfig: kind/kubeconfig, skip with OSB_SKIP_KIND=true)"
 echo "Seeds    : n8n + Gitea run in background (logs under .logs/)"

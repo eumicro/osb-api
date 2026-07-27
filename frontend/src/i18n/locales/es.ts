@@ -289,6 +289,8 @@ export default {
   platforms: {
     new: "Nueva plataforma",
     username: "Usuario",
+    password: "Contraseña",
+    passwordKeepHint: "dejar vacío para conservar la contraseña",
     catalog: "Catálogo",
     catalogHint: "Este catálogo se devuelve para la plataforma en GET /v2/catalog.",
     enabled: "activo",
@@ -296,6 +298,19 @@ export default {
     none: "No hay clientes de plataforma.",
     hint: "Cada plataforma ve un catálogo; el mismo catálogo puede usarse en varias plataformas (1:N).",
     deleteConfirm: '¿Eliminar realmente la plataforma "{id}"?',
+    connectionTitle: "Conexión para el operador de plataforma",
+    apiBaseUrl: "URL base de la API del broker",
+    catalogUrl: "URL del catálogo",
+    apiVersionHint:
+      "HTTP Basic Auth y cabecera X-Broker-API-Version: 2.17. URL vía VITE_OSB_BROKER_PUBLIC_URL.",
+    passwordHandedOff:
+      "Copie la contraseña ahora: no se volverá a cargar desde el servidor.",
+    passwordNotReadable:
+      "Contraseña configurada (no visible). Guarde una nueva para entregarla de nuevo.",
+    passwordRequiredHint: "Aún no hay contraseña: defínala arriba y guarde.",
+    copy: "Copiar",
+    copied: "Copiado",
+    copyAll: "Copiar todo",
   },
   workflows: {
     new: "Nuevo workflow",

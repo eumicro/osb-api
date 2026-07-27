@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import io.osb.domain.httpclients.HttpClientAuthType;
 import io.osb.domain.httpclients.HttpClientInstance;
 import io.osb.domain.httpclients.HttpClientInstanceRepository;
+import io.osb.domain.secrets.SecretResolver;
+import io.osb.domain.secrets.SecretStore;
 import io.osb.port.client.ClientCommandResult;
 import io.osb.port.http.HttpClientNetworkPort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -24,14 +26,17 @@ public class NoOpHttpClientNetwork implements HttpClientNetworkPort {
     private static final ObjectMapper JSON = new ObjectMapper();
 
     private final HttpClientInstanceRepository httpClientInstanceRepository;
+    private final SecretStore secretStore;
     private final HttpClient httpClient = HttpClient.newBuilder()
             // n8n (and some reverse proxies) stall with Java's default HTTP/2.
             .version(HttpClient.Version.HTTP_1_1)
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    public NoOpHttpClientNetwork(HttpClientInstanceRepository httpClientInstanceRepository) {
+    public NoOpHttpClientNetwork(
+            HttpClientInstanceRepository httpClientInstanceRepository, SecretStore secretStore) {
         this.httpClientInstanceRepository = httpClientInstanceRepository;
+        this.secretStore = secretStore;
     }
 
     @Override
@@ -178,25 +183,28 @@ public class NoOpHttpClientNetwork implements HttpClientNetworkPort {
         if (instance == null || instance.authType() == HttpClientAuthType.NONE) {
             return;
         }
+        String secret = SecretResolver.resolve(secretStore, instance.secret());
         if (instance.authType() == HttpClientAuthType.BEARER) {
-            builder.header("Authorization", "Bearer " + instance.secret());
+            builder.header("Authorization", "Bearer " + secret);
             return;
         }
         if (instance.authType() == HttpClientAuthType.BASIC) {
             // Keycloak Admin: BASIC + well-known → password grant (admin-cli), then Bearer.
             if (instance.wellKnownUrl() != null && !instance.wellKnownUrl().isBlank()) {
-                String accessToken = fetchPasswordGrantToken(instance);
+                String accessToken = fetchPasswordGrantToken(instance, secret);
                 builder.header("Authorization", "Bearer " + accessToken);
                 return;
             }
             String token = Base64.getEncoder()
-                    .encodeToString((instance.username() + ":" + instance.secret())
+                    .encodeToString((instance.username() + ":" + secret)
                             .getBytes(StandardCharsets.UTF_8));
             builder.header("Authorization", "Basic " + token);
             return;
         }
         if (instance.authType() == HttpClientAuthType.CLIENT_CREDENTIALS) {
-            String accessToken = fetchClientCredentialsToken(instance);
+            String oauthSecret =
+                    SecretResolver.resolve(secretStore, instance.oauthClientSecret());
+            String accessToken = fetchClientCredentialsToken(instance, oauthSecret);
             builder.header("Authorization", "Bearer " + accessToken);
         }
     }
@@ -204,7 +212,7 @@ public class NoOpHttpClientNetwork implements HttpClientNetworkPort {
     /**
      * Password grant via well-known token endpoint (used for Keycloak admin-cli).
      */
-    private String fetchPasswordGrantToken(HttpClientInstance instance) {
+    private String fetchPasswordGrantToken(HttpClientInstance instance, String password) {
         try {
             String tokenEndpoint = resolveTokenEndpoint(instance);
             String clientId = instance.oauthClientId() == null || instance.oauthClientId().isBlank()
@@ -213,7 +221,7 @@ public class NoOpHttpClientNetwork implements HttpClientNetworkPort {
             String form = "grant_type=password"
                     + "&client_id=" + urlEncode(clientId)
                     + "&username=" + urlEncode(instance.username())
-                    + "&password=" + urlEncode(instance.secret());
+                    + "&password=" + urlEncode(password);
             HttpRequest tokenRequest = HttpRequest.newBuilder(URI.create(tokenEndpoint))
                     .timeout(Duration.ofSeconds(instance.timeoutSeconds()))
                     .header("Content-Type", "application/x-www-form-urlencoded")
@@ -263,12 +271,12 @@ public class NoOpHttpClientNetwork implements HttpClientNetworkPort {
     /**
      * Resolves {@code token_endpoint} from OpenID well-known and requests a client-credentials token.
      */
-    private String fetchClientCredentialsToken(HttpClientInstance instance) {
+    private String fetchClientCredentialsToken(HttpClientInstance instance, String clientSecret) {
         try {
             String tokenEndpoint = resolveTokenEndpoint(instance);
             String form = "grant_type=client_credentials"
                     + "&client_id=" + urlEncode(instance.oauthClientId())
-                    + "&client_secret=" + urlEncode(instance.oauthClientSecret());
+                    + "&client_secret=" + urlEncode(clientSecret);
             HttpRequest tokenRequest = HttpRequest.newBuilder(URI.create(tokenEndpoint))
                     .timeout(Duration.ofSeconds(instance.timeoutSeconds()))
                     .header("Content-Type", "application/x-www-form-urlencoded")
