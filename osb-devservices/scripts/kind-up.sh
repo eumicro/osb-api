@@ -144,18 +144,39 @@ if command -v kubectl >/dev/null 2>&1; then
     PG_USER="${POSTGRES_USER:-osb}"
     PG_DB="${POSTGRES_DB:-osb}"
     if ${CONTAINER_CLI} exec "${PG_CONTAINER}" pg_isready -U "${PG_USER}" -d "${PG_DB}" >/dev/null 2>&1; then
-      ESCAPED="$(printf '%s' "${TOKEN}" | sed "s/'/''/g")"
+      TOKEN_REF="osb/k8s/k8s-local-dev/token"
       ${CONTAINER_CLI} exec -i "${PG_CONTAINER}" \
         psql -U "${PG_USER}" -d "${PG_DB}" -v ON_ERROR_STOP=1 \
         -c "UPDATE kubernetes_client_instances
             SET auth_type = 'BEARER',
-                token = '${ESCAPED}',
+                token_ref = '${TOKEN_REF}',
                 api_server_url = 'https://host.docker.internal:${KIND_API_PORT:-6443}',
                 insecure_skip_tls_verify = TRUE,
                 enabled = TRUE
             WHERE id = 'k8s-local-dev';" \
-        && echo "Updated kubernetes_client_instances.k8s-local-dev token + host.docker.internal URL in Postgres." \
+        && echo "Updated kubernetes_client_instances.k8s-local-dev token_ref + host.docker.internal URL in Postgres." \
         || echo "WARN: could not UPDATE k8s-local-dev in Postgres (run after osb-api/Flyway)." >&2
+
+      # Store the bearer token in OpenBao when available (Compose SecretStore).
+      OPENBAO_URL="${OSB_OPENBAO_URL:-http://localhost:${OSB_OPENBAO_PORT:-8200}}"
+      OPENBAO_TOKEN="${OSB_OPENBAO_TOKEN:-osb-root}"
+      if command -v curl >/dev/null 2>&1; then
+        JSON_VALUE="$(printf '%s' "${TOKEN}" | sed 's/\\/\\\\/g; s/"/\\"/g')"
+        if curl -fsS -H "X-Vault-Token: ${OPENBAO_TOKEN}" \
+            -H "Content-Type: application/json" \
+            -d "{\"data\":{\"value\":\"${JSON_VALUE}\"}}" \
+            "${OPENBAO_URL}/v1/secret/data/${TOKEN_REF}" >/dev/null 2>&1; then
+          echo "Stored k8s-local-dev token in OpenBao (${TOKEN_REF})."
+        else
+          # Fallback: write plaintext into token_ref so ClientSecretsMigrator picks it up on API start.
+          ESCAPED="$(printf '%s' "${TOKEN}" | sed "s/'/''/g")"
+          ${CONTAINER_CLI} exec -i "${PG_CONTAINER}" \
+            psql -U "${PG_USER}" -d "${PG_DB}" -v ON_ERROR_STOP=1 \
+            -c "UPDATE kubernetes_client_instances SET token_ref = '${ESCAPED}' WHERE id = 'k8s-local-dev';" \
+            && echo "WARN: OpenBao unreachable — wrote plaintext token_ref for migrator." >&2 \
+            || true
+        fi
+      fi
     else
       echo "Postgres ${PG_CONTAINER} not ready — token saved to ${TOKEN_FILE}; apply later."
     fi

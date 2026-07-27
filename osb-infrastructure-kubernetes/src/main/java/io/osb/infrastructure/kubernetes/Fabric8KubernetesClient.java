@@ -10,6 +10,8 @@ import io.fabric8.kubernetes.client.KubernetesClientBuilder;
 import io.osb.domain.kubernetesclients.KubernetesClientAuthType;
 import io.osb.domain.kubernetesclients.KubernetesClientInstance;
 import io.osb.domain.kubernetesclients.KubernetesClientInstanceRepository;
+import io.osb.domain.secrets.SecretResolver;
+import io.osb.domain.secrets.SecretStore;
 import io.osb.port.client.ClientCommandResult;
 import io.osb.port.kubernetes.KubernetesClientPort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,10 +34,13 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
     private static final Set<String> ACTIONS = Set.of("status", "apply", "delete", "get");
 
     private final KubernetesClientInstanceRepository kubernetesClientInstanceRepository;
+    private final SecretStore secretStore;
 
     public Fabric8KubernetesClient(
-            KubernetesClientInstanceRepository kubernetesClientInstanceRepository) {
+            KubernetesClientInstanceRepository kubernetesClientInstanceRepository,
+            SecretStore secretStore) {
         this.kubernetesClientInstanceRepository = kubernetesClientInstanceRepository;
+        this.secretStore = secretStore;
     }
 
     @Override
@@ -204,7 +209,7 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
      * Connects to the remote API server configured on the client instance.
      * Does not assume a local kubeconfig or co-located cluster.
      */
-    private static KubernetesClient buildClient(KubernetesClientInstance instance) {
+    private KubernetesClient buildClient(KubernetesClientInstance instance) {
         ConfigBuilder builder = new ConfigBuilder()
                 .withMasterUrl(instance.apiServerUrl())
                 .withNamespace(instance.defaultNamespace())
@@ -212,20 +217,21 @@ public class Fabric8KubernetesClient implements KubernetesClientPort {
                 .withConnectionTimeout(instance.timeoutSeconds() * 1000)
                 .withTrustCerts(instance.insecureSkipTlsVerify());
 
+        String tokenOrPassword = SecretResolver.resolve(secretStore, instance.token());
         switch (instance.authType()) {
             case BEARER -> {
-                if (!instance.hasToken()) {
+                if (tokenOrPassword.isBlank()) {
                     throw new IllegalArgumentException(
                             "kubernetes client " + instance.id() + " requires a bearer token");
                 }
-                builder.withOauthToken(instance.token());
+                builder.withOauthToken(tokenOrPassword);
             }
             case BASIC -> {
-                if (instance.username().isBlank() || !instance.hasToken()) {
+                if (instance.username().isBlank() || tokenOrPassword.isBlank()) {
                     throw new IllegalArgumentException(
                             "kubernetes client " + instance.id() + " requires BASIC username/password");
                 }
-                builder.withUsername(instance.username()).withPassword(instance.token());
+                builder.withUsername(instance.username()).withPassword(tokenOrPassword);
             }
             case NONE -> {
                 // Anonymous / insecure lab clusters only

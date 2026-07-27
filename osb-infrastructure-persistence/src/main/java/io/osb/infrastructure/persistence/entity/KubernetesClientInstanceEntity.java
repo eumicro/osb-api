@@ -32,13 +32,13 @@ public class KubernetesClientInstanceEntity extends PanacheEntityBase {
     @Column(nullable = false, length = 255)
     public String username;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "token_ref", nullable = false, columnDefinition = "TEXT")
     public String token;
 
     @Column(name = "oauth_client_id", nullable = false, length = 255)
     public String oauthClientId;
 
-    @Column(name = "oauth_client_secret", nullable = false, columnDefinition = "TEXT")
+    @Column(name = "oauth_client_secret_ref", nullable = false, columnDefinition = "TEXT")
     public String oauthClientSecret;
 
     @Column(name = "well_known_url", nullable = false, length = 1024)

@@ -13,6 +13,7 @@ public final class PlatformClientMapper {
                 entity.displayName,
                 entity.username,
                 entity.catalogId,
+                entity.passwordRef == null ? "" : entity.passwordRef,
                 entity.enabled);
     }
 
@@ -27,6 +28,7 @@ public final class PlatformClientMapper {
         entity.displayName = client.displayName();
         entity.username = client.username();
         entity.catalogId = client.catalogId();
+        entity.passwordRef = client.passwordRef();
         entity.enabled = client.enabled();
     }
 }

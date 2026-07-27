@@ -3,6 +3,8 @@ package io.osb.infrastructure.git;
 import io.osb.domain.gitclients.GitClientAuthMethod;
 import io.osb.domain.gitclients.GitClientInstance;
 import io.osb.domain.gitclients.GitClientInstanceRepository;
+import io.osb.domain.secrets.SecretResolver;
+import io.osb.domain.secrets.SecretStore;
 import io.osb.port.client.ClientCommandResult;
 import io.osb.port.git.GitClientPort;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -32,12 +34,15 @@ public class GiteaHttpGitClient implements GitClientPort {
             "^(https?://[^/]+)/([^/]+)/([^/]+?)(?:\\.git)?/?$", Pattern.CASE_INSENSITIVE);
 
     private final GitClientInstanceRepository gitClientInstanceRepository;
+    private final SecretStore secretStore;
     private final HttpClient httpClient = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(5))
             .build();
 
-    public GiteaHttpGitClient(GitClientInstanceRepository gitClientInstanceRepository) {
+    public GiteaHttpGitClient(
+            GitClientInstanceRepository gitClientInstanceRepository, SecretStore secretStore) {
         this.gitClientInstanceRepository = gitClientInstanceRepository;
+        this.secretStore = secretStore;
     }
 
     @Override
@@ -274,7 +279,8 @@ public class GiteaHttpGitClient implements GitClientPort {
                                     + Base64.getEncoder()
                                             .encodeToString((instance.effectiveUsername()
                                                             + ":"
-                                                            + instance.secret())
+                                                            + SecretResolver.resolve(
+                                                                    secretStore, instance.secret()))
                                                     .getBytes(StandardCharsets.UTF_8)));
             if (jsonBody != null) {
                 builder.header("Content-Type", "application/json");

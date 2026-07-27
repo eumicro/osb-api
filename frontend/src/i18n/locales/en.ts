@@ -313,6 +313,8 @@ export default {
   platforms: {
     new: "New platform",
     username: "Username",
+    password: "Password",
+    passwordKeepHint: "leave blank to keep existing password",
     catalog: "Catalog",
     catalogHint: "This catalog is returned for the platform on GET /v2/catalog.",
     enabled: "enabled",
@@ -320,6 +322,19 @@ export default {
     none: "No platform clients available.",
     hint: "Each platform sees exactly one catalog; the same catalog can be used by multiple platforms (1:N).",
     deleteConfirm: 'Really delete platform "{id}"?',
+    connectionTitle: "Connection for platform operators",
+    apiBaseUrl: "Broker API base URL",
+    catalogUrl: "Catalog URL",
+    apiVersionHint:
+      "HTTP Basic Auth and header X-Broker-API-Version: 2.17. Broker URL via VITE_OSB_BROKER_PUBLIC_URL.",
+    passwordHandedOff:
+      "Copy the password now — it will not be loaded from the server again.",
+    passwordNotReadable:
+      "Password is set (not readable). Save a new password to hand it off again.",
+    passwordRequiredHint: "No password yet — set one above and save.",
+    copy: "Copy",
+    copied: "Copied",
+    copyAll: "Copy all",
   },
   workflows: {
     new: "New workflow",

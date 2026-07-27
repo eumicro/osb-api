@@ -8,7 +8,7 @@ import { usePlatforms } from "../../controllers/usePlatforms";
 import type { CreatePlatformClientRequest, PlatformClient } from "../../models/platformClient";
 import { applyPlatformSelection } from "../../stores/selectionSync";
 import { focusPanel, openPlatformInNewTab } from "../../stores/workspaceLayout";
-import { workspace } from "../../stores/workspace";
+import { setRevealedPlatformPassword, workspace } from "../../stores/workspace";
 import CollectionViewToggle from "../molecules/CollectionViewToggle.vue";
 import CreateButton from "../molecules/CreateButton.vue";
 import ReloadButton from "../molecules/ReloadButton.vue";
@@ -67,6 +67,7 @@ async function onCreate(request: CreatePlatformClientRequest) {
   const saved = await create(request);
   if (saved) {
     createDialogOpen.value = false;
+    setRevealedPlatformPassword(saved.id, request.password);
     applyPlatformSelection(saved, catalogs.value);
     focusPanel("platform");
   }

@@ -112,6 +112,9 @@ public final class KubernetesClientInstance {
         return username;
     }
 
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} for Bearer token or BASIC password (not plaintext).
+     */
     public String token() {
         return token;
     }
@@ -120,6 +123,9 @@ public final class KubernetesClientInstance {
         return oauthClientId;
     }
 
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} for the OAuth client secret (not plaintext).
+     */
     public String oauthClientSecret() {
         return oauthClientSecret;
     }

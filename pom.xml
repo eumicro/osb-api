@@ -27,6 +27,7 @@
         <module>osb-infrastructure-git</module>
         <module>osb-infrastructure-kubernetes</module>
         <module>osb-infrastructure-http-client</module>
+        <module>osb-infrastructure-secrets</module>
         <module>osb-api</module>
         <module>osb-bff</module>
         <module>osb-devservices</module>
@@ -91,6 +92,11 @@
             <dependency>
                 <groupId>io.osb</groupId>
                 <artifactId>osb-infrastructure-http-client</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.osb</groupId>
+                <artifactId>osb-infrastructure-secrets</artifactId>
                 <version>${project.version}</version>
             </dependency>
         </dependencies>

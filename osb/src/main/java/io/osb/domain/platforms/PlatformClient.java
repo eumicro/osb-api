@@ -14,6 +14,7 @@ public final class PlatformClient {
     private final String displayName;
     private final String username;
     private final String catalogId;
+    private final String passwordRef;
     private final boolean enabled;
 
     public PlatformClient(
@@ -21,11 +22,13 @@ public final class PlatformClient {
             String displayName,
             String username,
             String catalogId,
+            String passwordRef,
             boolean enabled) {
         this.id = requireText(id, "id");
         this.displayName = requireText(displayName, "displayName");
         this.username = requireText(username, "username");
         this.catalogId = requireText(catalogId, "catalogId");
+        this.passwordRef = Objects.requireNonNullElse(passwordRef, "");
         this.enabled = enabled;
     }
 
@@ -45,6 +48,17 @@ public final class PlatformClient {
         return catalogId;
     }
 
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} to the Basic-Auth password (not plaintext).
+     */
+    public String passwordRef() {
+        return passwordRef;
+    }
+
+    public boolean hasPassword() {
+        return !passwordRef.isBlank();
+    }
+
     public boolean enabled() {
         return enabled;
     }
@@ -53,8 +67,9 @@ public final class PlatformClient {
             String displayName,
             String username,
             String catalogId,
+            String passwordRef,
             boolean enabled) {
-        return new PlatformClient(id, displayName, username, catalogId, enabled);
+        return new PlatformClient(id, displayName, username, catalogId, passwordRef, enabled);
     }
 
     private static String requireText(String value, String field) {

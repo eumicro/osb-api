@@ -74,6 +74,7 @@ osb-infrastructure-persistence/   JPA / Flyway
 osb-infrastructure-git/           Git client adapter
 osb-infrastructure-kubernetes/    Kubernetes client adapter
 osb-infrastructure-http-client/   HTTP client adapter
+osb-infrastructure-secrets/       SecretStore (OpenBao / in-memory)
 osb-api/                          OSB + Admin API (:8080)
 osb-bff/                          Frontend BFF (:8081) — OIDC, proxy, Quinoa
 osb-devservices/                  Compose (Postgres, Keycloak, n8n, Gitea) + Kind scripts

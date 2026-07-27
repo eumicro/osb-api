@@ -32,10 +32,10 @@ public class GitClientInstanceEntity extends PanacheEntityBase {
     @Column(nullable = false, length = 255)
     public String username;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "secret_ref", nullable = false, columnDefinition = "TEXT")
     public String secret;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(name = "passphrase_ref", nullable = false, columnDefinition = "TEXT")
     public String passphrase;
 
     @Column(nullable = false)

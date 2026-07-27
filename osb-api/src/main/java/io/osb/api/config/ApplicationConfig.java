@@ -42,6 +42,7 @@ import io.osb.domain.gitclients.GitClientInstanceRepository;
 import io.osb.domain.httpclients.HttpClientInstanceRepository;
 import io.osb.domain.kubernetesclients.KubernetesClientInstanceRepository;
 import io.osb.domain.platforms.PlatformClientRepository;
+import io.osb.domain.secrets.SecretStore;
 import io.osb.domain.templates.TemplateRepository;
 import io.osb.domain.workflows.WorkflowDefinitionRepository;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -149,15 +150,17 @@ public class ApplicationConfig {
     @Singleton
     SavePlatformClientUseCase savePlatformClientUseCase(
             PlatformClientRepository platformClientRepository,
-            CatalogRepository catalogRepository) {
-        return new SavePlatformClientUseCase(platformClientRepository, catalogRepository);
+            CatalogRepository catalogRepository,
+            SecretStore secretStore) {
+        return new SavePlatformClientUseCase(
+                platformClientRepository, catalogRepository, secretStore);
     }
 
     @Produces
     @Singleton
     DeletePlatformClientUseCase deletePlatformClientUseCase(
-            PlatformClientRepository platformClientRepository) {
-        return new DeletePlatformClientUseCase(platformClientRepository);
+            PlatformClientRepository platformClientRepository, SecretStore secretStore) {
+        return new DeletePlatformClientUseCase(platformClientRepository, secretStore);
     }
 
     @Produces
@@ -238,15 +241,15 @@ public class ApplicationConfig {
     @Produces
     @Singleton
     SaveHttpClientInstanceUseCase saveHttpClientInstanceUseCase(
-            HttpClientInstanceRepository httpClientInstanceRepository) {
-        return new SaveHttpClientInstanceUseCase(httpClientInstanceRepository);
+            HttpClientInstanceRepository httpClientInstanceRepository, SecretStore secretStore) {
+        return new SaveHttpClientInstanceUseCase(httpClientInstanceRepository, secretStore);
     }
 
     @Produces
     @Singleton
     DeleteHttpClientInstanceUseCase deleteHttpClientInstanceUseCase(
-            HttpClientInstanceRepository httpClientInstanceRepository) {
-        return new DeleteHttpClientInstanceUseCase(httpClientInstanceRepository);
+            HttpClientInstanceRepository httpClientInstanceRepository, SecretStore secretStore) {
+        return new DeleteHttpClientInstanceUseCase(httpClientInstanceRepository, secretStore);
     }
 
     @Produces
@@ -266,15 +269,19 @@ public class ApplicationConfig {
     @Produces
     @Singleton
     SaveKubernetesClientInstanceUseCase saveKubernetesClientInstanceUseCase(
-            KubernetesClientInstanceRepository kubernetesClientInstanceRepository) {
-        return new SaveKubernetesClientInstanceUseCase(kubernetesClientInstanceRepository);
+            KubernetesClientInstanceRepository kubernetesClientInstanceRepository,
+            SecretStore secretStore) {
+        return new SaveKubernetesClientInstanceUseCase(
+                kubernetesClientInstanceRepository, secretStore);
     }
 
     @Produces
     @Singleton
     DeleteKubernetesClientInstanceUseCase deleteKubernetesClientInstanceUseCase(
-            KubernetesClientInstanceRepository kubernetesClientInstanceRepository) {
-        return new DeleteKubernetesClientInstanceUseCase(kubernetesClientInstanceRepository);
+            KubernetesClientInstanceRepository kubernetesClientInstanceRepository,
+            SecretStore secretStore) {
+        return new DeleteKubernetesClientInstanceUseCase(
+                kubernetesClientInstanceRepository, secretStore);
     }
 
     @Produces
@@ -294,14 +301,14 @@ public class ApplicationConfig {
     @Produces
     @Singleton
     SaveGitClientInstanceUseCase saveGitClientInstanceUseCase(
-            GitClientInstanceRepository gitClientInstanceRepository) {
-        return new SaveGitClientInstanceUseCase(gitClientInstanceRepository);
+            GitClientInstanceRepository gitClientInstanceRepository, SecretStore secretStore) {
+        return new SaveGitClientInstanceUseCase(gitClientInstanceRepository, secretStore);
     }
 
     @Produces
     @Singleton
     DeleteGitClientInstanceUseCase deleteGitClientInstanceUseCase(
-            GitClientInstanceRepository gitClientInstanceRepository) {
-        return new DeleteGitClientInstanceUseCase(gitClientInstanceRepository);
+            GitClientInstanceRepository gitClientInstanceRepository, SecretStore secretStore) {
+        return new DeleteGitClientInstanceUseCase(gitClientInstanceRepository, secretStore);
     }
 }

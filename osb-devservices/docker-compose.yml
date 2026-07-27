@@ -124,6 +124,26 @@ services:
       retries: 30
       start_period: 45s
 
+  # OpenBao (Vault-compatible) for client credentials — Dev-Mode (auto-unsealed, root token).
+  openbao:
+    image: quay.io/openbao/openbao:2.2.0
+    container_name: osb-openbao
+    command:
+      - server
+      - -dev
+      - -dev-root-token-id=${OSB_OPENBAO_TOKEN:-osb-root}
+      - -dev-listen-address=0.0.0.0:8200
+    environment:
+      BAO_DEV_ROOT_TOKEN_ID: ${OSB_OPENBAO_TOKEN:-osb-root}
+    ports:
+      - "${OSB_OPENBAO_PORT:-8200}:8200"
+    healthcheck:
+      test: ["CMD", "bao", "status", "-address=http://127.0.0.1:8200"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
   osb-api:
     build:
       context: ..
@@ -139,6 +159,8 @@ services:
         condition: service_healthy
       gitea:
         condition: service_healthy
+      openbao:
+        condition: service_healthy
     environment:
       QUARKUS_PROFILE: compose
       OSB_N8N_CLIENT_TOKEN: ${OSB_N8N_CLIENT_TOKEN:-osb-n8n-client-dev-secret}
@@ -148,6 +170,10 @@ services:
       OSB_N8N_BASE_URL: http://n8n:5678
       OSB_KEYCLOAK_URL: http://keycloak:8080
       OSB_KEYCLOAK_REALM: osb
+      OSB_SECRETS_PROVIDER: openbao
+      OSB_OPENBAO_URL: http://openbao:8200
+      OSB_OPENBAO_TOKEN: ${OSB_OPENBAO_TOKEN:-osb-root}
+      OSB_OPENBAO_MOUNT: ${OSB_OPENBAO_MOUNT:-secret}
     ports:
       - "${OSB_API_PORT:-8080}:8080"
       - "${OSB_API_DEBUG_PORT:-5005}:5005"

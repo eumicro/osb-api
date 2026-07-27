@@ -5,5 +5,6 @@ public record PlatformClientDto(
         String displayName,
         String username,
         String catalogId,
+        boolean passwordConfigured,
         boolean enabled) {
 }

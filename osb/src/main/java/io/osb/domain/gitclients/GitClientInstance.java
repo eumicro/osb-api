@@ -91,13 +91,16 @@ public final class GitClientInstance {
     }
 
     /**
-     * HTTPS: password or personal access token. SSH: private key (PEM).
+     * {@link io.osb.domain.secrets.SecretRefs} for HTTPS password/PAT or SSH private key (not
+     * plaintext).
      */
     public String secret() {
         return secret;
     }
 
-    /** Optional passphrase for an encrypted SSH private key. */
+    /**
+     * {@link io.osb.domain.secrets.SecretRefs} for an optional SSH key passphrase (not plaintext).
+     */
     public String passphrase() {
         return passphrase;
     }
