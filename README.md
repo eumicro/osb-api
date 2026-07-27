@@ -1,5 +1,8 @@
 # OSB-API
 
+[![Container images](https://github.com/eumicro/osb-api/actions/workflows/container-images.yml/badge.svg)](https://github.com/eumicro/osb-api/actions/workflows/container-images.yml)
+[![Helm](https://github.com/eumicro/osb-api/actions/workflows/helm.yml/badge.svg)](https://github.com/eumicro/osb-api/actions/workflows/helm.yml)
+
 Open Service Broker API with a management UI — modular Clean Architecture on **Quarkus** (Java 25) and **Vue 3**.
 
 ![Demo: workspace Views (Standard, Instances, Templates, Workflows) and osb-platform lifecycle](./docs/demo.gif)
@@ -294,6 +297,8 @@ GHCR packages (`osb-api`, `osb-bff`, Helm chart `osb`) are **public** — no `do
 | [`docs/demo.gif`](docs/demo.gif) | Admin UI user-journey demo (regenerate below); configuration activity diagram follows the GIF in this README |
 | [`docs/RELEASING.md`](docs/RELEASING.md) | Release Please, notes, SemVer, GHCR |
 | [`CHANGELOG.md`](CHANGELOG.md) | Generated release history |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Dev setup, PR guidelines |
+| [`SECURITY.md`](SECURITY.md) | Supported versions, vulnerability reporting |
 | [`charts/osb/README.md`](charts/osb/README.md) | Helm chart (OCI on GHCR) |
 | [`osb-devservices/README.md`](osb-devservices/README.md) | Local infrastructure, Kind, Gitea, realtest seeds |
 
@@ -309,6 +314,10 @@ npm run demo:gif
 ```
 
 This records a calm tour: Views menu + Panels menu (read-only), then your existing Views (Standard → Templates → Workflows → Instances) with list + detail, then `osb-platform` provision/deprovision into [`docs/demo.gif`](docs/demo.gif). The script never creates views or panels.
+
+## Contributing
+
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for setup, tests, and pull-request guidelines. Security reports: [SECURITY.md](./SECURITY.md). More details: [docs/RELEASING.md](./docs/RELEASING.md), [CHANGELOG.md](./CHANGELOG.md).
 
 ## License
 
