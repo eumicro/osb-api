@@ -1,0 +1,73 @@
+# Homelab overrides for osb Helm chart (local chart / OCI with OpenBao).
+imageTag: "0.1.4"
+
+# OpenBao is enabled by chart default (SecretStore); keep explicit for clarity.
+openbao:
+  enabled: true
+  rootToken: osb-root
+  # Durable SecretStore in Postgres DB `openbao` (same instance as osb/n8n).
+  storage:
+    type: postgresql
+    postgresql:
+      host: postgres.emergence-platform.svc.cluster.local
+      database: openbao
+
+ingress:
+  enabled: true
+  className: traefik
+  hosts:
+    - host: emergence-platform.cloudapplication.lan
+      paths:
+        - path: /
+          pathType: Prefix
+          service: bff
+  tls:
+    - hosts:
+        - emergence-platform.cloudapplication.lan
+
+config:
+  postgres:
+    jdbcUrl: jdbc:postgresql://postgres.emergence-platform.svc.cluster.local:5432/osb
+    username: osb
+    password: osb
+  n8n:
+    baseUrl: http://n8n.emergence-platform.svc.cluster.local:5678
+    clientToken: osb-n8n-client-dev-secret
+    bridgeSecret: osb-n8n-bridge-dev-secret
+  keycloak:
+    url: http://keycloak.keycloak.svc.cluster.local:8080
+    realm: osb-api
+    authServerUrl: http://keycloak.keycloak.svc.cluster.local:8080/realms/osb-api
+    tokenIssuer: https://keycloak.cloudapplication.lan/realms/osb-api
+    authorizationPath: https://keycloak.cloudapplication.lan/realms/osb-api/protocol/openid-connect/auth
+    endSessionPath: https://keycloak.cloudapplication.lan/realms/osb-api/protocol/openid-connect/logout
+    tokenPath: /protocol/openid-connect/token
+    jwksPath: /protocol/openid-connect/certs
+    discoveryEnabled: "false"
+
+api:
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi
+
+bff:
+  existingSecret: osb-bff-oidc
+  env:
+    OSB_BFF_N8N_BASE_URL: https://n8n.emergence-platform.cloudapplication.lan
+    QUARKUS_HTTP_PROXY_PROXY_ADDRESS_FORWARDING: "true"
+    QUARKUS_HTTP_PROXY_ALLOW_X_FORWARDED: "true"
+    QUARKUS_HTTP_PROXY_ENABLE_FORWARDED_HOST: "true"
+    QUARKUS_OIDC_AUTHENTICATION_FORCE_REDIRECT_HTTPS_SCHEME: "true"
+    QUARKUS_OIDC_AUTHENTICATION_JAVA_SCRIPT_AUTO_REDIRECT: "false"
+    QUARKUS_OIDC_TOKEN_REFRESH_EXPIRED: "true"
+    QUARKUS_OIDC_TOKEN_REFRESH_TOKEN_TIME_SKEW: "30S"
+    QUARKUS_OIDC_AUTHENTICATION_SESSION_AGE_EXTENSION: "12H"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      memory: 1Gi

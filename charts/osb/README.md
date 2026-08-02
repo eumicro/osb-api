@@ -33,6 +33,8 @@ Provide reachable services and point `config.*` at them:
 | Keycloak | `config.keycloak.url` / OIDC paths |
 | n8n | `config.n8n.baseUrl` |
 
+**OpenBao** is packaged in this chart (`openbao.enabled`, default `true`). By default it uses **PostgreSQL** storage (`openbao.storage.type=postgresql`, database `openbao` on the same Postgres instance). Create that database before install. Set `openbao.devMode=true` for ephemeral in-memory `-dev` (Compose-like). Set `openbao.enabled=false` and `config.secrets.provider=memory` for an in-process SecretStore.
+
 ## Values (high level)
 
 | Key | Description |
@@ -40,6 +42,10 @@ Provide reachable services and point `config.*` at them:
 | `imageTag` | Tag for both images (default: `Chart.appVersion`) |
 | `api.image.repository` | `ghcr.io/eumicro/osb-api/osb-api` |
 | `bff.image.repository` | `ghcr.io/eumicro/osb-api/osb-bff` |
+| `openbao.enabled` | Deploy OpenBao and wire API SecretStore |
+| `openbao.storage.type` | `postgresql` (default) or `file` |
+| `openbao.devMode` | Ephemeral `-dev` / inmem (default `false`) |
+| `config.secrets.provider` | `memory` \| `openbao` (empty = follow `openbao.enabled`) |
 | `ingress.enabled` | Expose BFF (and optional API paths) |
 | `config.postgres.*` | JDBC + credentials |
 | `config.keycloak.*` | OIDC backchannel + browser URLs |

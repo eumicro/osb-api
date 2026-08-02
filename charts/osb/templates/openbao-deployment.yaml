@@ -1,0 +1,179 @@
+{{- if .Values.openbao.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+spec:
+  replicas: {{ .Values.openbao.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      {{- include "osb.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: openbao
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/openbao-configmap.yaml") . | sha256sum }}
+        checksum/secret: {{ include (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "osb.labels" . | nindent 8 }}
+        app.kubernetes.io/component: openbao
+        {{- with .Values.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "osb.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml (.Values.openbao.podSecurityContext | default .Values.podSecurityContext) | nindent 8 }}
+      containers:
+        - name: openbao
+          securityContext:
+            {{- toYaml (.Values.openbao.containerSecurityContext | default .Values.containerSecurityContext) | nindent 12 }}
+          image: "{{ .Values.openbao.image.repository }}:{{ .Values.openbao.image.tag }}"
+          imagePullPolicy: {{ .Values.openbao.image.pullPolicy }}
+          {{- if .Values.openbao.devMode }}
+          args:
+            - server
+            - -dev
+            - -dev-listen-address=0.0.0.0:8200
+          {{- else if .Values.openbao.args }}
+          args:
+            {{- toYaml .Values.openbao.args | nindent 12 }}
+          {{- else }}
+          args:
+            - server
+            - -config=/openbao/config/config.hcl
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.openbao.service.port }}
+              protocol: TCP
+          env:
+            {{- if .Values.openbao.devMode }}
+            - name: BAO_DEV_ROOT_TOKEN_ID
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "osb.openbao.tokenSecretName" . }}
+                  key: OSB_OPENBAO_TOKEN
+            {{- end }}
+            {{- range $k, $v := .Values.openbao.env }}
+            - name: {{ $k }}
+              value: {{ $v | quote }}
+            {{- end }}
+          {{- if not .Values.openbao.devMode }}
+          volumeMounts:
+            - name: config
+              mountPath: /openbao/config
+              readOnly: true
+            {{- if eq .Values.openbao.storage.type "file" }}
+            - name: data
+              mountPath: {{ .Values.openbao.storage.file.path }}
+            {{- end }}
+          {{- end }}
+          readinessProbe:
+            # Accept uninit/sealed so the Service gets endpoints for the init Job.
+            httpGet:
+              path: /v1/sys/health?standbyok=true&perfstandbyok=true&sealedcode=200&uninitcode=200
+              port: http
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /v1/sys/health?standbyok=true&perfstandbyok=true&sealedcode=200&uninitcode=200
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 15
+          resources:
+            {{- toYaml .Values.openbao.resources | nindent 12 }}
+        {{- if not .Values.openbao.devMode }}
+        - name: unseal
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+          image: docker.io/curlimages/curl:8.11.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              ADDR="http://127.0.0.1:{{ .Values.openbao.service.port }}"
+              echo "unseal sidecar waiting for OpenBao at ${ADDR}"
+              while true; do
+                code=$(curl -s -o /dev/null -w '%{http_code}' "${ADDR}/v1/sys/health?standbyok=true" || true)
+                if [ "$code" = "200" ] || [ "$code" = "429" ] || [ "$code" = "472" ] || [ "$code" = "473" ]; then
+                  sleep 10
+                  continue
+                fi
+                if [ "$code" = "501" ]; then
+                  sleep 5
+                  continue
+                fi
+                if [ "$code" = "503" ]; then
+                  key=$(cat /openbao/keys/UNSEAL_KEY 2>/dev/null || true)
+                  if [ -n "$key" ] && [ "$key" != "pending" ]; then
+                    curl -s --request PUT --data "{\"key\":\"${key}\"}" "${ADDR}/v1/sys/unseal" >/dev/null || true
+                  fi
+                fi
+                sleep 5
+              done
+          volumeMounts:
+            - name: keys
+              mountPath: /openbao/keys
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 64Mi
+        {{- end }}
+      {{- if not .Values.openbao.devMode }}
+      volumes:
+        - name: config
+          configMap:
+            name: {{ include "osb.openbao.fullname" . }}-config
+        {{- if not .Values.openbao.existingSecret }}
+        - name: keys
+          secret:
+            secretName: {{ include "osb.openbao.keysSecretName" . }}
+            optional: true
+        {{- else }}
+        - name: keys
+          secret:
+            secretName: {{ .Values.openbao.existingSecret }}
+            optional: true
+        {{- end }}
+        {{- if and (eq .Values.openbao.storage.type "file") .Values.openbao.storage.file.persistence.enabled }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ include "osb.openbao.fullname" . }}-data
+        {{- end }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

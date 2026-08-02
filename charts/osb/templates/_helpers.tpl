@@ -78,3 +78,81 @@ app.kubernetes.io/instance: {{ .Release.Name }}
 {{- printf "http://%s:%v" (include "osb.api.fullname" .) .Values.api.service.port }}
 {{- end }}
 {{- end }}
+
+{{- define "osb.openbao.fullname" -}}
+{{- printf "%s-openbao" (include "osb.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{/* memory | openbao — empty provider follows openbao.enabled */}}
+{{- define "osb.secrets.provider" -}}
+{{- if .Values.config.secrets.provider -}}
+{{- .Values.config.secrets.provider -}}
+{{- else if .Values.openbao.enabled -}}
+openbao
+{{- else -}}
+memory
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.url" -}}
+{{- if .Values.config.secrets.openbao.url -}}
+{{- .Values.config.secrets.openbao.url -}}
+{{- else if .Values.openbao.enabled -}}
+{{- printf "http://%s:%v" (include "osb.openbao.fullname" .) .Values.openbao.service.port -}}
+{{- else -}}
+{{- default "http://localhost:8200" .Values.config.secrets.openbao.url -}}
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.token" -}}
+{{- if .Values.config.secrets.openbao.token -}}
+{{- .Values.config.secrets.openbao.token -}}
+{{- else -}}
+{{- .Values.openbao.rootToken -}}
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.keysSecretName" -}}
+{{- printf "%s-openbao-keys" (include "osb.fullname" .) | trunc 63 | trimSuffix "-" }}
+{{- end }}
+
+{{- define "osb.openbao.tokenSecretName" -}}
+{{- if .Values.openbao.existingSecret -}}
+{{- .Values.openbao.existingSecret -}}
+{{- else if .Values.openbao.devMode -}}
+{{- printf "%s-credentials" (include "osb.fullname" .) -}}
+{{- else -}}
+{{- include "osb.openbao.keysSecretName" . -}}
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.pgHost" -}}
+{{- if .Values.openbao.storage.postgresql.host -}}
+{{- .Values.openbao.storage.postgresql.host -}}
+{{- else -}}
+{{- /* derive host from jdbcUrl jdbc:postgresql://host:port/db */ -}}
+{{- $u := .Values.config.postgres.jdbcUrl | trimPrefix "jdbc:" -}}
+{{- $withoutScheme := $u | trimPrefix "postgresql://" | trimPrefix "postgres://" -}}
+{{- $hostPort := splitList "/" $withoutScheme | first -}}
+{{- $host := splitList ":" $hostPort | first -}}
+{{- $host -}}
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.pgConnectionUrl" -}}
+{{- if .Values.openbao.storage.postgresql.connectionUrl -}}
+{{- .Values.openbao.storage.postgresql.connectionUrl -}}
+{{- else -}}
+{{- $user := .Values.openbao.storage.postgresql.username | default .Values.config.postgres.username -}}
+{{- $pass := .Values.openbao.storage.postgresql.password | default .Values.config.postgres.password -}}
+{{- $host := include "osb.openbao.pgHost" . -}}
+{{- $port := .Values.openbao.storage.postgresql.port | default 5432 -}}
+{{- $db := .Values.openbao.storage.postgresql.database | default "openbao" -}}
+{{- $ssl := .Values.openbao.storage.postgresql.sslMode | default "disable" -}}
+{{- printf "postgres://%s:%s@%s:%v/%s?sslmode=%s" $user $pass $host $port $db $ssl -}}
+{{- end -}}
+{{- end }}
+
+{{- define "osb.openbao.apiAddr" -}}
+{{- printf "http://%s:%v" (include "osb.openbao.fullname" .) .Values.openbao.service.port -}}
+{{- end }}
