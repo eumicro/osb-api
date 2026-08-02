@@ -50,9 +50,13 @@ jobs:
         include:
           - module: osb-api
             image_suffix: osb-api
+            image_title: Service broker API
+            image_description: Lets platforms discover a catalog and provision service instances.
             needs_node: false
           - module: osb-bff
             image_suffix: osb-bff
+            image_title: Operator console
+            image_description: Define offerings, automate provisioning, and manage service instances.
             needs_node: true
 
     steps:
@@ -129,8 +133,8 @@ jobs:
           images: ${{ steps.image.outputs.name }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
-            org.opencontainers.image.title=${{ matrix.image_suffix }}
-            org.opencontainers.image.description=OSB ${{ matrix.image_suffix }} JVM image (Compose / Kind)
+            org.opencontainers.image.title=${{ matrix.image_title }}
+            org.opencontainers.image.description=${{ matrix.image_description }}
             org.opencontainers.image.licenses=MIT
           tags: |
             type=ref,event=branch,enable=${{ steps.pub.outputs.is_release != 'true' }}
