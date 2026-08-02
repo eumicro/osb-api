@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are generated automatically from [Conventional Commits](https://www.conventionalcommits.org/)
 by [Release Please](https://github.com/googleapis/release-please). See [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.1.6](https://github.com/eumicro/osb-api/compare/v0.1.5...v0.1.6) (2026-08-02)
+
+
+### Miscellaneous
+
+* **main:** release 0.1.6-SNAPSHOT ([#26](https://github.com/eumicro/osb-api/issues/26)) ([a8d57a4](https://github.com/eumicro/osb-api/commit/a8d57a49d02dfcd9b8298b3187b0d9e9df0cc142))
+* point homelab deploy at OSB chart 0.1.5 ([#27](https://github.com/eumicro/osb-api/issues/27)) ([ce14bde](https://github.com/eumicro/osb-api/commit/ce14bde297bd02e3405d38bbb8ca6646f144b221))
+
 ## [0.1.5](https://github.com/eumicro/osb-api/compare/v0.1.4...v0.1.5) (2026-08-02)
 
 
