@@ -26,14 +26,9 @@ kubectl -n keycloak rollout status deploy/postgres deploy/keycloak --timeout=300
 kubectl -n emergence-platform rollout status deploy/postgres deploy/n8n --timeout=300s
 
 # 3) osb-api + osb-bff + OpenBao (SecretStore)
-# Prefer the chart from this repo until the next OCI release includes OpenBao:
-helm upgrade --install osb ./charts/osb \
+helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.5 \
   -n emergence-platform \
   -f deploy/homelab/emergence-platform/osb-values.yaml
-# Or from GHCR once published with OpenBao support:
-# helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version X.Y.Z \
-#   -n emergence-platform \
-#   -f deploy/homelab/emergence-platform/osb-values.yaml
 ```
 
 ## Demo login

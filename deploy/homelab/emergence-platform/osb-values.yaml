@@ -1,5 +1,5 @@
 # Homelab overrides for osb Helm chart (local chart / OCI with OpenBao).
-imageTag: "0.1.4"
+imageTag: "0.1.5"
 
 # OpenBao is enabled by chart default (SecretStore); keep explicit for clarity.
 openbao:
