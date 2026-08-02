@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are generated automatically from [Conventional Commits](https://www.conventionalcommits.org/)
 by [Release Please](https://github.com/googleapis/release-please). See [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.1.5](https://github.com/eumicro/osb-api/compare/v0.1.4...v0.1.5) (2026-08-02)
+
+
+### Features
+
+* add OpenBao to Helm chart with Postgres storage ([#25](https://github.com/eumicro/osb-api/issues/25)) ([addc989](https://github.com/eumicro/osb-api/commit/addc9897bf49420a43ccff23e9bef985ae82b1a0))
+
+
+### Miscellaneous
+
+* **main:** release 0.1.5-SNAPSHOT ([#23](https://github.com/eumicro/osb-api/issues/23)) ([bf4a4c9](https://github.com/eumicro/osb-api/commit/bf4a4c9240ef06848cffe0362208f0958cfdd125))
+
 ## [0.1.4](https://github.com/eumicro/osb-api/compare/v0.1.3...v0.1.4) (2026-08-02)
 
 
