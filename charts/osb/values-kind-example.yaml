@@ -16,6 +16,15 @@ ingress:
           pathType: Prefix
           service: bff
 
+openbao:
+  enabled: true
+  rootToken: osb-root
+  storage:
+    type: postgresql
+    postgresql:
+      host: postgres
+      database: openbao
+
 config:
   postgres:
     jdbcUrl: jdbc:postgresql://postgres:5432/osb

@@ -1,0 +1,27 @@
+apiVersion: traefik.io/v1alpha1
+kind: Middleware
+metadata:
+  name: redirect-https
+  namespace: emergence-platform
+spec:
+  redirectScheme:
+    scheme: https
+    permanent: true
+---
+apiVersion: traefik.io/v1alpha1
+kind: IngressRoute
+metadata:
+  name: http-to-https
+  namespace: emergence-platform
+spec:
+  entryPoints:
+    - web
+  routes:
+    - kind: Rule
+      match: Host(`emergence-platform.cloudapplication.lan`) || Host(`n8n.emergence-platform.cloudapplication.lan`)
+      middlewares:
+        - name: redirect-https
+      services:
+        # Required by Traefik; redirect middleware runs before the service is called.
+        - name: n8n
+          port: 5678

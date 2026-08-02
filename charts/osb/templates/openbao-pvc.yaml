@@ -1,0 +1,18 @@
+{{- if and .Values.openbao.enabled (not .Values.openbao.devMode) (eq .Values.openbao.storage.type "file") .Values.openbao.storage.file.persistence.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-data
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+spec:
+  accessModes:
+    - ReadWriteOnce
+  {{- with .Values.openbao.storage.file.persistence.storageClassName }}
+  storageClassName: {{ . | quote }}
+  {{- end }}
+  resources:
+    requests:
+      storage: {{ .Values.openbao.storage.file.persistence.size | quote }}
+{{- end }}

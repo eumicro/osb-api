@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: emergence-platform
+resources:
+  - namespace.yaml
+  - secret.yaml
+  - postgres.yaml
+  - n8n.yaml
+  - http-redirect.yaml
+configMapGenerator:
+  - name: n8n-hooks
+    files:
+      - hooks.js
+generatorOptions:
+  disableNameSuffixHash: true

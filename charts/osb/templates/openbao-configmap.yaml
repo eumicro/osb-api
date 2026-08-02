@@ -1,0 +1,30 @@
+{{- if and .Values.openbao.enabled (not .Values.openbao.devMode) }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-config
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+data:
+  config.hcl: |
+    ui = false
+    disable_mlock = true
+    api_addr = {{ include "osb.openbao.apiAddr" . | quote }}
+
+    listener "tcp" {
+      address     = "0.0.0.0:{{ .Values.openbao.service.port }}"
+      tls_disable = 1
+    }
+
+    {{- if eq .Values.openbao.storage.type "file" }}
+    storage "file" {
+      path = {{ .Values.openbao.storage.file.path | quote }}
+    }
+    {{- else }}
+    storage "postgresql" {
+      connection_url = {{ include "osb.openbao.pgConnectionUrl" . | quote }}
+      ha_enabled     = {{ .Values.openbao.storage.postgresql.haEnabled | quote }}
+    }
+    {{- end }}
+{{- end }}

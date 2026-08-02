@@ -1,0 +1,224 @@
+{{- if and .Values.openbao.enabled (not .Values.openbao.devMode) (not .Values.openbao.existingSecret) }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-init
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-init
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+rules:
+  - apiGroups: [""]
+    resources: ["secrets"]
+    verbs: ["create"]
+  - apiGroups: [""]
+    resources: ["secrets"]
+    resourceNames: ["{{ include "osb.openbao.keysSecretName" . }}"]
+    verbs: ["get", "update", "patch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments"]
+    resourceNames:
+      - {{ include "osb.api.fullname" . | quote }}
+    verbs: ["get", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-init
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "-5"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: {{ include "osb.openbao.fullname" . }}-init
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "osb.openbao.fullname" . }}-init
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: {{ include "osb.openbao.fullname" . }}-init
+  labels:
+    {{- include "osb.labels" . | nindent 4 }}
+    app.kubernetes.io/component: openbao
+  annotations:
+    helm.sh/hook: post-install,post-upgrade
+    helm.sh/hook-weight: "10"
+    helm.sh/hook-delete-policy: before-hook-creation,hook-succeeded
+spec:
+  backoffLimit: 20
+  ttlSecondsAfterFinished: 600
+  template:
+    metadata:
+      labels:
+        {{- include "osb.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: openbao-init
+    spec:
+      restartPolicy: OnFailure
+      serviceAccountName: {{ include "osb.openbao.fullname" . }}-init
+      containers:
+        - name: init
+          image: {{ .Values.openbao.initJob.image | quote }}
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: BAO_ADDR
+              value: {{ include "osb.openbao.apiAddr" . | quote }}
+            - name: KEYS_SECRET
+              value: {{ include "osb.openbao.keysSecretName" . | quote }}
+            - name: API_DEPLOYMENT
+              value: {{ include "osb.api.fullname" . | quote }}
+            - name: NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+          command: ["/bin/sh", "-ec"]
+          args:
+            - |
+              apk add --no-cache curl jq >/dev/null
+              CACERT=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+              TOKEN=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+              KUBE=https://kubernetes.default.svc
+              AUTH="Authorization: Bearer ${TOKEN}"
+
+              echo "Waiting for OpenBao at ${BAO_ADDR}..."
+              code=""
+              i=0
+              while [ "$i" -lt 90 ]; do
+                code=$(curl -s -o /dev/null -w '%{http_code}' "${BAO_ADDR}/v1/sys/health?standbyok=true" || true)
+                if [ -n "$code" ] && [ "$code" != "000" ]; then
+                  break
+                fi
+                i=$((i+1))
+                sleep 2
+              done
+              echo "OpenBao health HTTP ${code}"
+
+              get_secret() {
+                curl -sS -H "${AUTH}" --cacert "${CACERT}" \
+                  "${KUBE}/api/v1/namespaces/${NAMESPACE}/secrets/${KEYS_SECRET}"
+              }
+
+              put_secret() {
+                unseal="$1"
+                root="$2"
+                body=$(jq -n --arg u "$unseal" --arg r "$root" --arg n "${KEYS_SECRET}" \
+                  '{apiVersion:"v1",kind:"Secret",metadata:{name:$n},type:"Opaque",stringData:{UNSEAL_KEY:$u,OSB_OPENBAO_TOKEN:$r}}')
+                http=$(curl -sS -o /tmp/put.out -w '%{http_code}' -X PUT -H "${AUTH}" -H 'Content-Type: application/json' \
+                    --cacert "${CACERT}" \
+                    --data "${body}" \
+                    "${KUBE}/api/v1/namespaces/${NAMESPACE}/secrets/${KEYS_SECRET}" || true)
+                if [ "$http" != "200" ] && [ "$http" != "201" ]; then
+                  curl -sS -X POST -H "${AUTH}" -H 'Content-Type: application/json' \
+                    --cacert "${CACERT}" --data "${body}" \
+                    "${KUBE}/api/v1/namespaces/${NAMESPACE}/secrets" >/dev/null
+                fi
+              }
+
+              unseal_with() {
+                key="$1"
+                curl -sS --request PUT --data "{\"key\":\"${key}\"}" "${BAO_ADDR}/v1/sys/unseal" >/dev/null || true
+              }
+
+              enable_kv() {
+                root="$1"
+                mounts=$(curl -sS -H "X-Vault-Token: ${root}" "${BAO_ADDR}/v1/sys/mounts" || true)
+                echo "$mounts" | grep -q '"secret/"' && return 0
+                curl -sS -H "X-Vault-Token: ${root}" --request POST \
+                  --data '{"type":"kv","options":{"version":"2"}}' \
+                  "${BAO_ADDR}/v1/sys/mounts/secret" >/dev/null || true
+              }
+
+              bump_api() {
+                ts=$(date -u +%Y%m%d%H%M%S)
+                patch=$(jq -n --arg t "$ts" \
+                  '{"spec":{"template":{"metadata":{"annotations":{"osb.openbao/token-ready":$t}}}}}')
+                curl -sS -X PATCH -H "${AUTH}" -H 'Content-Type: application/strategic-merge-patch+json' \
+                  --cacert "${CACERT}" --data "${patch}" \
+                  "${KUBE}/apis/apps/v1/namespaces/${NAMESPACE}/deployments/${API_DEPLOYMENT}" >/dev/null || true
+              }
+
+              if [ "$code" = "501" ]; then
+                echo "Initializing OpenBao..."
+                init=$(curl -sS --request PUT --data '{"secret_shares":1,"secret_threshold":1}' "${BAO_ADDR}/v1/sys/init")
+                unseal=$(echo "$init" | jq -r '.keys_base64[0] // .keys[0] // empty')
+                root=$(echo "$init" | jq -r '.root_token // empty')
+                if [ -z "$unseal" ] || [ "$unseal" = "null" ] || [ -z "$root" ] || [ "$root" = "null" ]; then
+                  echo "Init failed: $init" >&2
+                  exit 1
+                fi
+                put_secret "$unseal" "$root"
+                unseal_with "$unseal"
+                j=0
+                while [ "$j" -lt 30 ]; do
+                  c=$(curl -s -o /dev/null -w '%{http_code}' "${BAO_ADDR}/v1/sys/health?standbyok=true" || true)
+                  [ "$c" = "200" ] && break
+                  j=$((j+1)); sleep 2
+                done
+                enable_kv "$root"
+                bump_api
+                echo "OpenBao initialized."
+                exit 0
+              fi
+
+              sec=$(get_secret)
+              unseal=$(echo "$sec" | jq -r '.data.UNSEAL_KEY // empty' | base64 -d 2>/dev/null || true)
+              root=$(echo "$sec" | jq -r '.data.OSB_OPENBAO_TOKEN // empty' | base64 -d 2>/dev/null || true)
+              if [ -z "$unseal" ] || [ "$unseal" = "pending" ]; then
+                echo "Keys secret not ready and OpenBao already initialized — cannot recover unseal key." >&2
+                if [ "$code" = "200" ]; then
+                  echo "OpenBao already unsealed; nothing to do."
+                  exit 0
+                fi
+                exit 1
+              fi
+
+              if [ "$code" = "503" ]; then
+                echo "Unsealing OpenBao..."
+                unseal_with "$unseal"
+              fi
+
+              j=0
+              while [ "$j" -lt 30 ]; do
+                c=$(curl -s -o /dev/null -w '%{http_code}' "${BAO_ADDR}/v1/sys/health?standbyok=true" || true)
+                [ "$c" = "200" ] && break
+                unseal_with "$unseal"
+                j=$((j+1)); sleep 2
+              done
+
+              if [ -n "$root" ] && [ "$root" != "pending" ]; then
+                enable_kv "$root"
+              fi
+              bump_api
+              echo "OpenBao ready."
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              memory: 128Mi
+{{- end }}

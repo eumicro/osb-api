@@ -7,6 +7,9 @@ Components:
 {{- if .Values.bff.enabled }}
   BFF : {{ include "osb.bff.fullname" . }}:{{ .Values.bff.service.port }}
 {{- end }}
+{{- if .Values.openbao.enabled }}
+  OpenBao : {{ include "osb.openbao.fullname" . }}:{{ .Values.openbao.service.port }} (SecretStore)
+{{- end }}
 
 Images:
 {{- if .Values.api.enabled }}
@@ -14,6 +17,9 @@ Images:
 {{- end }}
 {{- if .Values.bff.enabled }}
   {{ include "osb.bff.image" . }}
+{{- end }}
+{{- if .Values.openbao.enabled }}
+  {{ .Values.openbao.image.repository }}:{{ .Values.openbao.image.tag }}
 {{- end }}
 
 {{- if .Values.ingress.enabled }}
@@ -31,5 +37,6 @@ Port-forward the Admin UI (BFF):
 Then open http://127.0.0.1:8081
 {{- end }}
 
+SecretStore provider: {{ include "osb.secrets.provider" . }}
 Ensure Postgres, Keycloak, and n8n are reachable at the URLs in values (`config.*`).
 Chart published as OCI: oci://ghcr.io/eumicro/osb-api/osb

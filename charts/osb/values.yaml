@@ -93,8 +93,85 @@ config:
     tokenPath: /protocol/openid-connect/token
     jwksPath: /protocol/openid-connect/certs
     discoveryEnabled: "false"
+  # Client-credential SecretStore (Platform / HTTP / Git / K8s secrets).
+  secrets:
+    # memory | openbao — empty = openbao when openbao.enabled, else memory
+    provider: ""
+    openbao:
+      # Empty + openbao.enabled → http://<release>-openbao:8200
+      url: ""
+      # Empty → openbao.rootToken (written into chart credentials Secret)
+      token: ""
+      mount: secret
   # BFF → API (in-cluster). Auto-set to the chart's API service when empty.
   apiUrl: ""
+
+# OpenBao (Vault-compatible) for SecretStore.
+# Default: PostgreSQL storage (durable). Set openbao.devMode=true for Compose-like inmem.
+openbao:
+  enabled: true
+  replicaCount: 1
+  # -dev: in-memory, auto-unsealed (ephemeral). Prefer false + postgresql storage.
+  devMode: false
+  rootToken: osb-root
+  # Optional Secret with key OSB_OPENBAO_TOKEN (skips chart-managed token secret).
+  existingSecret: ""
+  image:
+    repository: quay.io/openbao/openbao
+    tag: "2.2.0"
+    pullPolicy: IfNotPresent
+  # Used by the init Job (HTTP API) and unseal sidecar.
+  initJob:
+    image: docker.io/library/alpine:3.20
+  service:
+    type: ClusterIP
+    port: 8200
+  storage:
+    # postgresql (default) | file — ignored when devMode=true
+    type: postgresql
+    postgresql:
+      # Empty host → derived from config.postgres.jdbcUrl
+      host: ""
+      port: 5432
+      database: openbao
+      # Empty → config.postgres.username / password
+      username: ""
+      password: ""
+      sslMode: disable
+      # Full override (wins over host/user/password)
+      connectionUrl: ""
+      haEnabled: false
+    file:
+      path: /openbao/data
+      persistence:
+        enabled: true
+        size: 1Gi
+        storageClassName: ""
+  # Used only when devMode=false and you pass custom server args (rare)
+  args: []
+  env: {}
+  # Image defaults to root; force non-root (OpenBao/Vault convention uid 100).
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 1000
+    fsGroup: 1000
+    seccompProfile:
+      type: RuntimeDefault
+  containerSecurityContext:
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop: ["ALL"]
+    readOnlyRootFilesystem: false
+    runAsNonRoot: true
+    runAsUser: 100
+    runAsGroup: 1000
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      memory: 256Mi
 
 ingress:
   enabled: false

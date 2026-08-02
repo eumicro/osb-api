@@ -58,14 +58,31 @@ spec:
               value: {{ .Values.config.keycloak.url | quote }}
             - name: OSB_KEYCLOAK_REALM
               value: {{ .Values.config.keycloak.realm | quote }}
+            - name: OSB_SECRETS_PROVIDER
+              value: {{ include "osb.secrets.provider" . | quote }}
+            {{- if eq (include "osb.secrets.provider" .) "openbao" }}
+            - name: OSB_OPENBAO_URL
+              value: {{ include "osb.openbao.url" . | quote }}
+            - name: OSB_OPENBAO_MOUNT
+              value: {{ .Values.config.secrets.openbao.mount | quote }}
+            {{- end }}
             {{- range $k, $v := .Values.api.env }}
             - name: {{ $k }}
               value: {{ $v | quote }}
             {{- end }}
           envFrom:
-            {{- if or .Values.config.postgres.password .Values.config.n8n.clientToken .Values.config.n8n.bridgeSecret }}
+            {{- $provider := include "osb.secrets.provider" . -}}
+            {{- $needCreds := or .Values.config.postgres.password .Values.config.n8n.clientToken .Values.config.n8n.bridgeSecret (and .Values.openbao.devMode (eq $provider "openbao") (not .Values.openbao.existingSecret) (include "osb.openbao.token" .)) }}
+            {{- if $needCreds }}
             - secretRef:
                 name: {{ include "osb.fullname" . }}-credentials
+            {{- end }}
+            {{- if and (eq $provider "openbao") (not .Values.openbao.devMode) }}
+            - secretRef:
+                name: {{ include "osb.openbao.tokenSecretName" . }}
+            {{- else if and (eq $provider "openbao") .Values.openbao.existingSecret }}
+            - secretRef:
+                name: {{ .Values.openbao.existingSecret }}
             {{- end }}
             {{- if .Values.api.existingSecret }}
             - secretRef:
