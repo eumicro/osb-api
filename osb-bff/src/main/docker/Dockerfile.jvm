@@ -25,6 +25,11 @@ COPY --chown=1001:root target/quarkus-app/*.jar /work/
 COPY --chown=1001:root target/quarkus-app/app/ /work/app/
 COPY --chown=1001:root target/quarkus-app/quarkus/ /work/quarkus/
 
+LABEL org.opencontainers.image.title="Operator console" \
+      org.opencontainers.image.description="Define offerings, automate provisioning, and manage service instances." \
+      org.opencontainers.image.source="https://github.com/eumicro/osb-api" \
+      org.opencontainers.image.licenses="MIT"
+
 EXPOSE 8081
 USER 1001
 

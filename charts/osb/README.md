@@ -1,6 +1,6 @@
 # OSB Helm Chart
 
-Deploys **osb-api** and **osb-bff** (Admin UI) to Kubernetes. Images and this chart are published to GHCR.
+Install a service catalog platforms can order from: offerings, automated provisioning, operator UI, and OpenBao for credentials. Images and this chart are published to GHCR.
 
 ## Install from GHCR (OCI)
 

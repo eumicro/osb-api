@@ -1,6 +1,6 @@
 apiVersion: v2
 name: osb
-description: Open Service Broker API + Admin BFF/UI for Kubernetes (dogfood)
+description: Service catalog platforms can order from — define offerings, automate provisioning, manage instances.
 type: application
 version: 0.1.6
 appVersion: 0.1.6
@@ -11,9 +11,9 @@ sources:
 annotations:
   licenses: MIT
 keywords:
-  - osb
+  - service-catalog
   - service-broker
-  - quarkus
+  - provisioning
 maintainers:
   - name: eumicro
     url: https://github.com/eumicro

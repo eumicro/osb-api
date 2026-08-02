@@ -25,6 +25,11 @@ COPY --chown=1001:root target/quarkus-app/*.jar /work/
 COPY --chown=1001:root target/quarkus-app/app/ /work/app/
 COPY --chown=1001:root target/quarkus-app/quarkus/ /work/quarkus/
 
+LABEL org.opencontainers.image.title="Service broker API" \
+      org.opencontainers.image.description="Lets platforms discover a catalog and provision service instances." \
+      org.opencontainers.image.source="https://github.com/eumicro/osb-api" \
+      org.opencontainers.image.licenses="MIT"
+
 EXPOSE 8080
 USER 1001
 
