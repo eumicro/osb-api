@@ -4,7 +4,7 @@
 
     <groupId>io.osb</groupId>
     <artifactId>osb-parent</artifactId>
-    <version>0.1.4-SNAPSHOT</version>
+    <version>0.1.4</version>
     <packaging>pom</packaging>
 
     <name>OSB-API Parent</name>

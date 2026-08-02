@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 Release notes are generated automatically from [Conventional Commits](https://www.conventionalcommits.org/)
 by [Release Please](https://github.com/googleapis/release-please). See [docs/RELEASING.md](docs/RELEASING.md).
 
+## [0.1.4](https://github.com/eumicro/osb-api/compare/v0.1.3...v0.1.4) (2026-08-02)
+
+
+### Bug Fixes
+
+* avoid CORS on OIDC login redirect from SPA fetch ([#22](https://github.com/eumicro/osb-api/issues/22)) ([5012a07](https://github.com/eumicro/osb-api/commit/5012a07eb447b1ad8b1441eaffaaa444ea03fc56))
+
+
+### Miscellaneous
+
+* **main:** release 0.1.4-SNAPSHOT ([#20](https://github.com/eumicro/osb-api/issues/20)) ([bbbca7a](https://github.com/eumicro/osb-api/commit/bbbca7a38fc4b14deabfbab0dc3e83b8c51f7b29))
+
 ## [0.1.3](https://github.com/eumicro/osb-api/compare/v0.1.2...v0.1.3) (2026-07-27)
 
 
