@@ -1,7 +1,7 @@
 {
   "name": "osb-ui",
   "private": true,
-  "version": "0.1.5-SNAPSHOT",
+  "version": "0.1.5",
   "description": "OSB-API Management UI",
   "license": "MIT",
   "author": "Eugen Lange",
