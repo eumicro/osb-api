@@ -203,6 +203,7 @@ Served by `osb-api` on port 8080 (proxied through the BFF when using the UI):
 | Infra clients | `/api/admin/git-clients`, `/api/admin/kubernetes-clients`, `/api/admin/http-clients` |
 | OSB catalog | `GET /v2/catalog` |
 | OSB instances | `PUT/GET/PATCH/DELETE /v2/service_instances/{id}`, `GET .../last_operation` |
+| OSB bindings | `PUT/GET/DELETE .../service_bindings/{binding_id}`, `GET .../last_operation` |
 
 Internal APIs used by n8n custom nodes live under `/api/internal/...`.
 
