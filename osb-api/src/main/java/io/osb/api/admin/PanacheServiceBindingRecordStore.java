@@ -37,11 +37,11 @@ public class PanacheServiceBindingRecordStore implements ServiceBindingRecordSto
     public void save(ServiceBindingDto dto) {
         ServiceBindingEntity entity = ServiceBindingEntity.findById(
                 new ServiceBindingEntity.Pk(dto.id(), dto.instanceId()));
-        if (entity == null) {
+        boolean create = entity == null;
+        if (create) {
             entity = new ServiceBindingEntity();
             entity.id = dto.id();
             entity.instanceId = dto.instanceId();
-            entity.persist();
         }
         entity.serviceId = dto.serviceId();
         entity.planId = dto.planId();
@@ -53,6 +53,9 @@ public class PanacheServiceBindingRecordStore implements ServiceBindingRecordSto
         entity.lastOperationState = dto.lastOperationState();
         entity.lastOperationDescription = dto.lastOperationDescription();
         entity.lastOperationKind = dto.lastOperationKind();
+        if (create) {
+            entity.persist();
+        }
     }
 
     @Override
