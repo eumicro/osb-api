@@ -34,10 +34,10 @@ public class PanacheServiceInstanceRecordStore implements ServiceInstanceRecordS
     @Transactional
     public void save(ServiceInstanceDto dto) {
         ServiceInstanceEntity entity = ServiceInstanceEntity.findById(dto.id());
-        if (entity == null) {
+        boolean create = entity == null;
+        if (create) {
             entity = new ServiceInstanceEntity();
             entity.id = dto.id();
-            entity.persist();
         }
         entity.serviceId = dto.serviceId();
         entity.planId = dto.planId();
@@ -49,6 +49,9 @@ public class PanacheServiceInstanceRecordStore implements ServiceInstanceRecordS
         entity.lastOperationState = dto.lastOperationState();
         entity.lastOperationDescription = dto.lastOperationDescription();
         entity.lastOperationKind = dto.lastOperationKind();
+        if (create) {
+            entity.persist();
+        }
     }
 
     @Override
