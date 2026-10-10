@@ -39,6 +39,24 @@ final class CommandJson {
         return sb.toString();
     }
 
+    static String ofBinding(
+            String instanceId,
+            String bindingId,
+            String serviceId,
+            String planId,
+            Map<String, Object> parameters) {
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"instanceId\":\"").append(escape(instanceId)).append("\",");
+        sb.append("\"bindingId\":\"").append(escape(bindingId)).append("\",");
+        sb.append("\"serviceId\":\"").append(escape(serviceId)).append("\",");
+        sb.append("\"planId\":\"").append(escape(planId)).append("\"");
+        if (parameters != null && !parameters.isEmpty()) {
+            sb.append(",\"parameters\":").append(mapToJson(parameters));
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
     private static String mapToJson(Map<String, Object> map) {
         StringBuilder sb = new StringBuilder("{");
         boolean first = true;
