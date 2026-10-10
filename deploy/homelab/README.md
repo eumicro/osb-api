@@ -25,6 +25,9 @@ kubectl apply -k deploy/homelab/emergence-platform
 kubectl -n keycloak rollout status deploy/postgres deploy/keycloak --timeout=300s
 kubectl -n emergence-platform rollout status deploy/postgres deploy/n8n --timeout=300s
 
+# 2b) Seed n8n lifecycle workflows (ConfigMap + Job; re-runnable)
+bash deploy/homelab/emergence-platform/scripts/seed-n8n-workflows.sh
+
 # 3) osb-api + osb-bff + OpenBao (SecretStore)
 helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.5 \
   -n emergence-platform \
@@ -42,5 +45,5 @@ helm upgrade --install osb oci://ghcr.io/eumicro/osb-api/osb --version 0.1.5 \
 - Realm import runs on first Keycloak start (`start-dev --import-realm`).
 - Keycloak image is **19.0.3** (26.x needs x86-64-v2; Latitude D830 CPUs do not support it).
 - OpenBao uses Postgres DB **`openbao`** (created in `postgres-init` / live `CREATE DATABASE`). Storage is durable; unseal key + root token live in Secret `osb-openbao-keys`.
-- n8n workflows from `osb-devservices/n8n/workflows/` are **not** auto-imported yet.
+- n8n is a **single replica** (Homelab SPOF). Workflow definitions live in Postgres DB `n8n` and survive pod restarts; re-seed with `scripts/seed-n8n-workflows.sh` after empty DB or workflow JSON changes. Full n8n HA is out of Homelab scope.
 - `domain-service-dev` Keycloak is unchanged.
