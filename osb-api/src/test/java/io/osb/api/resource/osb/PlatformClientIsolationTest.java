@@ -22,6 +22,8 @@ import io.osb.workflow.DeprovisioningCommand;
 import io.osb.workflow.DeprovisioningWorkflow;
 import io.osb.workflow.ProvisioningCommand;
 import io.osb.workflow.ProvisioningWorkflow;
+import io.osb.workflow.UpdatingCommand;
+import io.osb.workflow.UpdatingWorkflow;
 import io.osb.workflow.WorkflowStatus;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.core.Response;
@@ -89,6 +91,7 @@ class PlatformClientIsolationTest {
         adminStore = new AdminStore(
                 new StubProvisioningWorkflow(),
                 new StubDeprovisioningWorkflow(),
+                new StubUpdatingWorkflow(),
                 new MapServiceInstanceRecordStore());
         CatalogMapper mapper = new CatalogMapper();
         GetCatalogForPlatformUseCase getCatalog =
@@ -178,6 +181,33 @@ class PlatformClientIsolationTest {
         assertEquals(Response.Status.OK.getStatusCode(), response.getStatus());
     }
 
+    @Test
+    void patchOnForeignInstanceUrlReturnsNotFound() {
+        assertThrows(
+                NotFoundException.class,
+                () -> instancesResource.update(
+                        "inst-owned-by-a",
+                        basic("user-b", "pass-b"),
+                        "2.17",
+                        true,
+                        new io.osb.api.dto.osb.UpdateServiceInstanceRequest(
+                                "svc-a", "plan-a", Map.of("x", 1), null, null)));
+    }
+
+    @Test
+    void ownerCanPatchOwnInstanceAsync() {
+        // Mark provision as succeeded so update is allowed.
+        adminStore.findById("inst-owned-by-a");
+        Response response = instancesResource.update(
+                "inst-owned-by-a",
+                basic("user-a", "pass-a"),
+                "2.17",
+                true,
+                new io.osb.api.dto.osb.UpdateServiceInstanceRequest(
+                        "svc-a", "plan-a", Map.of("tier", "gold"), null, null));
+        assertEquals(Response.Status.ACCEPTED.getStatusCode(), response.getStatus());
+    }
+
     private static Set<String> offeringIds(CatalogResponse response) {
         return response.services().stream().map(s -> s.id()).collect(Collectors.toSet());
     }
@@ -209,7 +239,7 @@ class PlatformClientIsolationTest {
 
         @Override
         public WorkflowStatus status(String operationId) {
-            return WorkflowStatus.IN_PROGRESS;
+            return WorkflowStatus.SUCCEEDED;
         }
     }
 
@@ -222,6 +252,18 @@ class PlatformClientIsolationTest {
         @Override
         public WorkflowStatus status(String operationId) {
             return WorkflowStatus.IN_PROGRESS;
+        }
+    }
+
+    private static final class StubUpdatingWorkflow implements UpdatingWorkflow {
+        @Override
+        public String start(UpdatingCommand command) {
+            return "op-upd-" + command.instanceId();
+        }
+
+        @Override
+        public WorkflowStatus status(String operationId) {
+            return WorkflowStatus.SUCCEEDED;
         }
     }
 

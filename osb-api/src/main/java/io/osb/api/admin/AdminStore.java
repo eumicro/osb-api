@@ -5,6 +5,8 @@ import io.osb.workflow.DeprovisioningCommand;
 import io.osb.workflow.DeprovisioningWorkflow;
 import io.osb.workflow.ProvisioningCommand;
 import io.osb.workflow.ProvisioningWorkflow;
+import io.osb.workflow.UpdatingCommand;
+import io.osb.workflow.UpdatingWorkflow;
 import io.osb.workflow.WorkflowStatus;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
@@ -21,14 +23,17 @@ public class AdminStore {
 
     private final ProvisioningWorkflow provisioningWorkflow;
     private final DeprovisioningWorkflow deprovisioningWorkflow;
+    private final UpdatingWorkflow updatingWorkflow;
     private final ServiceInstanceRecordStore records;
 
     public AdminStore(
             ProvisioningWorkflow provisioningWorkflow,
             DeprovisioningWorkflow deprovisioningWorkflow,
+            UpdatingWorkflow updatingWorkflow,
             ServiceInstanceRecordStore records) {
         this.provisioningWorkflow = provisioningWorkflow;
         this.deprovisioningWorkflow = deprovisioningWorkflow;
+        this.updatingWorkflow = updatingWorkflow;
         this.records = records;
     }
 
@@ -142,6 +147,69 @@ public class AdminStore {
         return updated;
     }
 
+    /**
+     * OSB {@code PATCH /v2/service_instances/{id}} — starts an async UPDATE workflow and applies
+     * the new plan/parameters once the operation succeeds (polled via last_operation).
+     */
+    @Transactional
+    public ServiceInstanceDto requestUpdate(
+            String instanceId,
+            String serviceId,
+            String planId,
+            Map<String, Object> parameters) {
+        ServiceInstanceDto existing = findById(instanceId)
+                .orElseThrow(() -> new IllegalArgumentException("instance not found: " + instanceId));
+        if (isPending(existing.state())) {
+            throw new IllegalStateException("instance has an operation in progress");
+        }
+
+        Map<String, Object> previousParameters = copyParameters(existing.parameters());
+        Map<String, Object> nextParameters = copyParameters(parameters);
+        ServiceInstanceDto updating = new ServiceInstanceDto(
+                existing.id(),
+                serviceId,
+                planId,
+                "in progress",
+                existing.platformClientId(),
+                existing.dashboardUrl(),
+                nextParameters,
+                null,
+                "in progress",
+                "Starting update workflow",
+                "UPDATE");
+        records.save(updating);
+
+        String operationId;
+        try {
+            operationId = updatingWorkflow.start(new UpdatingCommand(
+                    existing.id(),
+                    serviceId,
+                    planId,
+                    nextParameters,
+                    previousParameters));
+        } catch (RuntimeException ex) {
+            ServiceInstanceDto failed = withOperation(
+                    updating,
+                    null,
+                    "failed",
+                    "failed",
+                    "Update workflow failed to start: " + ex.getMessage(),
+                    "UPDATE");
+            records.save(failed);
+            return failed;
+        }
+
+        ServiceInstanceDto withOp = withOperation(
+                updating,
+                operationId,
+                "in progress",
+                "in progress",
+                "Update workflow started",
+                "UPDATE");
+        records.save(withOp);
+        return syncOperation(withOp);
+    }
+
     @Transactional
     public Optional<ServiceInstanceDto> deprovision(String id) {
         Optional<ServiceInstanceDto> found = records.findById(id);
@@ -207,11 +275,14 @@ public class AdminStore {
             return instance;
         }
 
+        String kind = instance.lastOperationKind() == null ? "" : instance.lastOperationKind();
         WorkflowStatus status;
         try {
-            status = "DEPROVISION".equals(instance.lastOperationKind())
-                    ? deprovisioningWorkflow.status(operationId)
-                    : provisioningWorkflow.status(operationId);
+            status = switch (kind) {
+                case "DEPROVISION" -> deprovisioningWorkflow.status(operationId);
+                case "UPDATE" -> updatingWorkflow.status(operationId);
+                default -> provisioningWorkflow.status(operationId);
+            };
         } catch (RuntimeException ex) {
             return instance;
         }
@@ -219,7 +290,7 @@ public class AdminStore {
         return switch (status) {
             case IN_PROGRESS -> instance;
             case SUCCEEDED -> {
-                if ("DEPROVISION".equals(instance.lastOperationKind())) {
+                if ("DEPROVISION".equals(kind)) {
                     ServiceInstanceDto done = withOperation(
                             instance,
                             operationId,
@@ -230,14 +301,18 @@ public class AdminStore {
                     records.save(done);
                     yield done;
                 }
+                String completedKind = "UPDATE".equals(kind) ? "UPDATE" : "PROVISION";
+                String description = "UPDATE".equals(kind) ? "Update completed" : "Provision completed";
                 ServiceInstanceDto done = withOperation(
                         instance,
                         operationId,
                         "succeeded",
                         "succeeded",
-                        "Provision completed",
-                        "PROVISION");
-                done = withDashboardUrl(done, provisioningWorkflow.dashboardUrl(operationId));
+                        description,
+                        completedKind);
+                if ("PROVISION".equals(completedKind)) {
+                    done = withDashboardUrl(done, provisioningWorkflow.dashboardUrl(operationId));
+                }
                 records.save(done);
                 yield done;
             }
