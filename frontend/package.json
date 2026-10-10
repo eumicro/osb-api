@@ -26,13 +26,15 @@
   },
   "dependencies": {
     "@guolao/vue-monaco-editor": "^1.6.0",
-    "@jsonschema-editor/json-schema-extensions": "^0.1.12",
-    "@jsonschema-editor/vue": "^0.1.12",
-    "@jsonschema-editor/vue-extensions": "^0.1.12",
+    "@jsonschema-editor/json-schema-extensions": "file:vendor/jsonschema-editor-json-schema-extensions-0.1.18.tgz",
+    "@jsonschema-editor/vue": "file:vendor/jsonschema-editor-vue-0.1.18.tgz",
+    "@jsonschema-editor/vue-extensions": "file:vendor/jsonschema-editor-vue-extensions-0.1.18.tgz",
     "dockview-vue": "^7.0.2",
     "monaco-editor": "^0.55.1",
     "vue": "^3.5.13",
-    "vue-i18n": "^11.4.6"
+    "vue-i18n": "^11.4.6",
+    "@jsonschema-editor/json-schema": "file:vendor/jsonschema-editor-json-schema-0.1.18.tgz",
+    "@jsonschema-editor/ui-schema": "file:vendor/jsonschema-editor-ui-schema-0.1.18.tgz"
   },
   "devDependencies": {
     "@types/pngjs": "^6.0.5",
