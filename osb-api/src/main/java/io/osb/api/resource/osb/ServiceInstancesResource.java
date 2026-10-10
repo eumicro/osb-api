@@ -5,6 +5,7 @@ import io.osb.api.dto.admin.ServiceInstanceDto;
 import io.osb.api.dto.osb.LastOperationResponse;
 import io.osb.api.dto.osb.ProvisionServiceInstanceRequest;
 import io.osb.api.dto.osb.ServiceInstanceResponse;
+import io.osb.api.dto.osb.UpdateServiceInstanceRequest;
 import io.osb.auth.PlatformAuthenticator;
 import io.osb.auth.PlatformPrincipal;
 import io.osb.domain.catalog.Catalog;
@@ -18,6 +19,7 @@ import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.PATCH;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
@@ -119,6 +121,59 @@ public class ServiceInstancesResource {
                         "parameters",
                         instance.parameters() == null ? Map.of() : instance.parameters()))
                 .build();
+    }
+
+    @PATCH
+    public Response update(
+            @PathParam("instance_id") String instanceId,
+            @HeaderParam(HttpHeaders.AUTHORIZATION) String authorization,
+            @HeaderParam("X-Broker-API-Version") String apiVersion,
+            @QueryParam("accepts_incomplete") @DefaultValue("false") boolean acceptsIncomplete,
+            UpdateServiceInstanceRequest request) {
+        PlatformPrincipal principal =
+                PlatformBasicAuth.requirePrincipal(platformAuthenticator, authorization);
+        ServiceInstanceDto current = requireOwnedInstance(principal.clientId(), instanceId);
+
+        String serviceId = request != null && request.serviceId() != null && !request.serviceId().isBlank()
+                ? request.serviceId().trim()
+                : current.serviceId();
+        String planId = request != null && request.planId() != null && !request.planId().isBlank()
+                ? request.planId().trim()
+                : current.planId();
+        ServicePlan plan = requirePlanInPlatformCatalog(principal.catalogId(), serviceId, planId);
+
+        Map<String, Object> rawParameters = request == null || request.parameters() == null
+                ? current.parameters()
+                : request.parameters();
+        Map<String, Object> parameters =
+                PlanParameterSchemas.validateAndApplyDefaults(plan.schemas(), rawParameters);
+
+        boolean unchanged = Objects.equals(current.serviceId(), serviceId)
+                && Objects.equals(current.planId(), planId)
+                && Objects.equals(
+                        current.parameters() == null ? Map.of() : current.parameters(), parameters);
+        if (unchanged) {
+            return Response.ok(toResponse(current)).build();
+        }
+
+        if (!acceptsIncomplete) {
+            return Response.status(422)
+                    .entity(Map.of(
+                            "error", "AsyncRequired",
+                            "description",
+                            "This service plan requires client support for asynchronous operations."))
+                    .build();
+        }
+
+        try {
+            ServiceInstanceDto updated =
+                    adminStore.requestUpdate(instanceId, serviceId, planId, parameters);
+            return Response.accepted(toResponse(updated)).build();
+        } catch (IllegalStateException ex) {
+            return Response.status(Response.Status.CONFLICT)
+                    .entity(Map.of("description", ex.getMessage()))
+                    .build();
+        }
     }
 
     @DELETE

@@ -575,7 +575,9 @@ GroupId/Package-Namespace sind **TBD**.
 - [ ] Konkrete OSB-Version als verbindliche Baseline (Empfehlung: 2.17)  
 - [ ] DB-Produkt und Migrations-Tool (Flyway/Liquibase)  
 - [ ] Ob Application Layer in `osb` oder eigenes Modul `osb-application`  
-- [ ] Binding-Support im MVP: ja/nein  
+- [x] Instance Update (`PATCH /v2/service_instances/{id}`) via `UpdatingWorkflow` / n8n `UPDATE`  
+- [ ] Binding-Support (`PUT/DELETE .../service_bindings`) — Feature #40  
+
 - [x] Catalog-Scoping pro Platform (`PlatformClient.catalogId` + Auth)  
 - [ ] Callback- vs. Poll-Modell für n8n  
 - [x] Secret-Handling für Git/HTTP/K8s/Platform-Client-Credentials (`SecretStore` + OpenBao; Bindings Follow-up)  
@@ -586,6 +588,7 @@ GroupId/Package-Namespace sind **TBD**.
 
 | Version | Datum | Änderung |
 | --- | --- | --- |
+| 0.1.7 | 2026-10-10 | OSB `PATCH` Instance Update (`UpdatingWorkflow` / n8n `UPDATE`) |
 | 0.1.2 | 2026-07-27 | Platform Basic Auth + SecretStore, OSB `/v2/service_instances`, Catalog-Scoping |
 | 0.1.1 | 2026-07-27 | Client-Credential SecretStore (OpenBao), Modul `osb-infrastructure-secrets` |
 | 0.1.0 | 2026-07-18 | Erstes Zielbild als arc42 aus Projektbriefing |

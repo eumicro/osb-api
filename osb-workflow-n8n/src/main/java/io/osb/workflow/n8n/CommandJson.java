@@ -19,6 +19,26 @@ final class CommandJson {
         return sb.toString();
     }
 
+    static String ofUpdate(
+            String instanceId,
+            String serviceId,
+            String planId,
+            Map<String, Object> parameters,
+            Map<String, Object> previousParameters) {
+        StringBuilder sb = new StringBuilder("{");
+        sb.append("\"instanceId\":\"").append(escape(instanceId)).append("\",");
+        sb.append("\"serviceId\":\"").append(escape(serviceId)).append("\",");
+        sb.append("\"planId\":\"").append(escape(planId)).append("\"");
+        if (parameters != null && !parameters.isEmpty()) {
+            sb.append(",\"parameters\":").append(mapToJson(parameters));
+        }
+        if (previousParameters != null && !previousParameters.isEmpty()) {
+            sb.append(",\"previousParameters\":").append(mapToJson(previousParameters));
+        }
+        sb.append('}');
+        return sb.toString();
+    }
+
     private static String mapToJson(Map<String, Object> map) {
         StringBuilder sb = new StringBuilder("{");
         boolean first = true;
