@@ -3,11 +3,14 @@
 | Attribut | Wert |
 | --- | --- |
 | Projekt | OSB-API |
-| Status | Zielbild / Entwurf (noch nicht vollständig) |
-| Version | 0.1.0 |
-| Datum | 2026-07-18 |
+| Status | Lebendes Zielbild (Code-Stand) |
+| Version | 0.1.10 |
+| Datum | 2026-10-10 |
 | Backend | Java / Quarkus |
 | Frontend | Vue.js |
+| Persistenz | PostgreSQL + Flyway (`osb-infrastructure-persistence`) |
+| Secrets | OpenBao KV (`osb-infrastructure-secrets`) |
+| Deploy | Helm Chart `osb` (GHCR OCI) + Homelab Kustomize |
 | Referenz­spezifikation | [Open Service Broker API v2.17](https://github.com/openservicebrokerapi/servicebroker/blob/v2.17/spec.md) |
 
 ---
@@ -124,7 +127,7 @@ flowchart TB
 | Kubernetes API | HTTPS + ServiceAccount/Token | outbound | Create/Update/Delete/Get Resources |
 | Git | HTTPS/SSH (Git-Client) | outbound | Config/Manifest Management |
 | HTTP-Netze | HTTPS (konfigurierbare Clients) | outbound | Provisionierungs­nebenpfade |
-| Persistenz | JDBC / DB (konkret TBD) | outbound | Domain Persistence |
+| Persistenz | JDBC → PostgreSQL (Flyway-Migrationen) | outbound | Catalog/Admin/Instances/Bindings + n8n/OpenBao DBs |
 
 ### 3.3 OSB-API-Oberfläche (Kern)
 
@@ -393,7 +396,7 @@ flowchart LR
   API --> GIT
 ```
 
-Konkrete Deployment-Topologie (Single Pod vs. getrennte Worker, DB-Produkt, Ingress) ist **TBD**.
+**Homelab-Topologie (Ist):** Namespace `emergence-platform` — Postgres (DBs `osb` / `n8n` / `openbao`), n8n (1 Replica), Helm-Release `osb` (osb-api + osb-bff + OpenBao), Traefik-Ingress `*.cloudapplication.lan`. Keycloak zentral in NS `keycloak`. n8n-Seed: `deploy/homelab/emergence-platform/scripts/seed-n8n-workflows.sh`.
 
 ---
 
@@ -505,7 +508,7 @@ Beispielhafte Permissions (Ziel):
 | Q-03 | Adapter-Tests mit Testcontainers wo sinnvoll | DB, ggf. WireMock für n8n/HTTP |
 | Q-04 | AuthZ: negativ-Tests für fehlende Gruppenrechte | `osb-auth2` + API-Tests |
 | Q-05 | Nachvollziehbare Operation-Historie | Persistenz + UI |
-| Q-06 | Ausfall n8n/K8s führt zu sauberem `failed` + Beschreibung | Timeout/Retry-Policy TBD |
+| Q-06 | Ausfall n8n/K8s führt zu sauberem `failed` + Beschreibung | n8n-Adapter mappt Invoke-Fehler auf Operation `failed`; Poll/Timeout weiter schärfen |
 
 ### 10.1 Qualitätsszenarien
 
@@ -523,7 +526,7 @@ Beispielhafte Permissions (Ziel):
 | R-01 | Zielbild unvollständig → Scope Creep | hoch | arc42 + ADRs iterativ pflegen; MVP schneiden |
 | R-02 | OSB-Konformitätslücken (Headers, Error Codes, Idempotenz) | hoch | Spec-Checkliste + Conformance Tests früh |
 | R-03 | Leakage von Infra in Domain | mittel | ArchUnit-Regeln für Dependency Rule |
-| R-04 | n8n als SPOF / schwieriges Statusmodell | mittel | klare Operation-State-Machine; Callback + Poll; Timeout |
+| R-04 | n8n als SPOF / schwieriges Statusmodell | mittel | Homelab: 1 Replica + Postgres-State + Seed-Script; OSB last-op `failed` bei Invoke-Fehler; HA/Queue später |
 | R-05 | Command-UI für Git/K8s (Sicherheit) | hoch | Policy, Allowlist, Audit, least privilege |
 | R-06 | Multi-Platform Catalog-Scoping unklar | mittel | Produktentscheidung vor Implementierung |
 | R-07 | „osb-auth2“-Name vs. OAuth2/OIDC-Scope | niedrig | Naming in ADR klären (`osb-security`?) |
@@ -568,27 +571,27 @@ com.example.osb:osb-infrastructure-http-client
 com.example.osb:osb-infrastructure-secrets
 ```
 
-GroupId/Package-Namespace sind **TBD**.
+GroupId/Package: **`io.osb`** (Maven-Module unter diesem Parent).
 
 ## Anhang B — Offene Punkte (Backlog Architektur)
 
-- [ ] Konkrete OSB-Version als verbindliche Baseline (Empfehlung: 2.17)  
-- [ ] DB-Produkt und Migrations-Tool (Flyway/Liquibase)  
+- [x] Konkrete OSB-Version als verbindliche Baseline (2.17)  
+- [x] DB-Produkt und Migrations-Tool (PostgreSQL + Flyway)  
 - [ ] Ob Application Layer in `osb` oder eigenes Modul `osb-application`  
 - [x] Instance Update (`PATCH /v2/service_instances/{id}`) via `UpdatingWorkflow` / n8n `UPDATE`  
 - [x] Binding-Support (`PUT/GET/DELETE .../service_bindings`) via `BindingWorkflow` / n8n `BIND`/`UNBIND`  
-
-
 - [x] Catalog-Scoping pro Platform (`PlatformClient.catalogId` + Auth)  
 - [ ] Callback- vs. Poll-Modell für n8n  
 - [x] Secret-Handling für Git/HTTP/K8s/Platform-Client-Credentials (`SecretStore` + OpenBao; Bindings Follow-up)  
 - [ ] Package-/Repo-Struktur Frontend Monorepo vs. getrennt  
 - [x] CI-Gates: ArchUnit (`ArchitectureTest`) + Catalog Contract Smoke (`CatalogContractSmokeTest`)  
+- [x] Homelab n8n-Workflow-Seed (ConfigMap + Job-Script; SPOF dokumentiert, HA später)  
 
 ## Anhang C — Dokumenthistorie
 
 | Version | Datum | Änderung |
 | --- | --- | --- |
+| 0.1.10 | 2026-10-10 | Persistenz/Helm/OpenBao Ist-Stand; Homelab n8n-Seed; R-04 Gegenmaßnahmen |
 | 0.1.9 | 2026-10-10 | ArchUnit dependency gates (`ArchitectureTest`) |
 | 0.1.8 | 2026-10-10 | OSB Service Bindings (`BindingStore` + Flyway V20) |
 | 0.1.7 | 2026-10-10 | OSB `PATCH` Instance Update (`UpdatingWorkflow` / n8n `UPDATE`) |
