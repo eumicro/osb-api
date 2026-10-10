@@ -1,9 +1,11 @@
 apiVersion: v2
 name: osb
-description: Service catalog platforms can order from — define offerings, automate provisioning, manage instances.
+description: >-
+  Service catalog platforms can order from — define offerings, automate
+  provisioning, manage instances.
 type: application
-version: 0.1.6
-appVersion: 0.1.6
+version: 0.1.7-SNAPSHOT
+appVersion: 0.1.7-SNAPSHOT
 kubeVersion: '>=1.25.0-0'
 home: https://github.com/eumicro/osb-api
 sources:
