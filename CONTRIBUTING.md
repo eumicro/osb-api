@@ -20,8 +20,10 @@ Build and typecheck:
 cd frontend && npm ci && npm run typecheck
 ```
 
-CI runs `./mvnw -B test` on every PR (`CI` workflow) including catalog contract smoke
-(`CatalogContractSmokeTest`: missing/invalid Basic → 401 mapping, valid client → assigned offerings).
+CI runs `./mvnw -B test` on every PR (`CI` workflow) including:
+- catalog contract smoke (`CatalogContractSmokeTest`: missing/invalid Basic → 401, valid client → offerings)
+- ArchUnit dependency rules (`ArchitectureTest`: domain/application/ports stay free of API/infra/n8n)
+
 Container image builds may still use `-DskipTests` because the verify job is required separately.
 
 More detail: [README.md](./README.md) (Quick start / Manual start) and [osb-devservices/README.md](./osb-devservices/README.md).
