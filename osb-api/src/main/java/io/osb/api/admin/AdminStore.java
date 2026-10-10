@@ -1,7 +1,6 @@
 package io.osb.api.admin;
 
 import io.osb.api.dto.admin.ServiceInstanceDto;
-import io.osb.infrastructure.persistence.entity.ServiceInstanceEntity;
 import io.osb.workflow.DeprovisioningCommand;
 import io.osb.workflow.DeprovisioningWorkflow;
 import io.osb.workflow.ProvisioningCommand;
@@ -16,30 +15,31 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-/** Postgres-backed admin store for service instances. */
+/** Admin store for service instances (Postgres via {@link ServiceInstanceRecordStore}). */
 @ApplicationScoped
 public class AdminStore {
 
     private final ProvisioningWorkflow provisioningWorkflow;
     private final DeprovisioningWorkflow deprovisioningWorkflow;
+    private final ServiceInstanceRecordStore records;
 
     public AdminStore(
             ProvisioningWorkflow provisioningWorkflow,
-            DeprovisioningWorkflow deprovisioningWorkflow) {
+            DeprovisioningWorkflow deprovisioningWorkflow,
+            ServiceInstanceRecordStore records) {
         this.provisioningWorkflow = provisioningWorkflow;
         this.deprovisioningWorkflow = deprovisioningWorkflow;
+        this.records = records;
     }
 
     @Transactional
     public List<ServiceInstanceDto> listInstances() {
-        List<ServiceInstanceDto> snapshot = ServiceInstanceEntity.<ServiceInstanceEntity>listAll().stream()
-                .map(AdminStore::toDto)
-                .toList();
+        List<ServiceInstanceDto> snapshot = records.listAll();
         List<ServiceInstanceDto> synced = new ArrayList<>(snapshot.size());
         for (ServiceInstanceDto instance : snapshot) {
             ServiceInstanceDto next = syncOperation(instance);
             if (isFullyDeprovisioned(next)) {
-                ServiceInstanceEntity.deleteById(next.id());
+                records.delete(next.id());
                 continue;
             }
             synced.add(next);
@@ -49,13 +49,13 @@ public class AdminStore {
 
     @Transactional
     public Optional<ServiceInstanceDto> findById(String id) {
-        ServiceInstanceEntity entity = ServiceInstanceEntity.findById(id);
-        if (entity == null) {
+        Optional<ServiceInstanceDto> found = records.findById(id);
+        if (found.isEmpty()) {
             return Optional.empty();
         }
-        ServiceInstanceDto synced = syncOperation(toDto(entity));
+        ServiceInstanceDto synced = syncOperation(found.get());
         if (isFullyDeprovisioned(synced)) {
-            ServiceInstanceEntity.deleteById(id);
+            records.delete(id);
         }
         return Optional.of(synced);
     }
@@ -93,7 +93,7 @@ public class AdminStore {
                 "in progress",
                 "Starting provision workflow",
                 "PROVISION");
-        persist(created);
+        records.save(created);
 
         String operationId;
         try {
@@ -107,7 +107,7 @@ public class AdminStore {
                     "failed",
                     "Provision workflow failed to start: " + ex.getMessage(),
                     "PROVISION");
-            persist(failed);
+            records.save(failed);
             return failed;
         }
 
@@ -118,7 +118,7 @@ public class AdminStore {
                 "in progress",
                 "Provision workflow started",
                 "PROVISION");
-        persist(withOp);
+        records.save(withOp);
         return syncOperation(withOp);
     }
 
@@ -138,19 +138,19 @@ public class AdminStore {
                 existing.lastOperationState(),
                 existing.lastOperationDescription(),
                 existing.lastOperationKind());
-        persist(updated);
+        records.save(updated);
         return updated;
     }
 
     @Transactional
     public Optional<ServiceInstanceDto> deprovision(String id) {
-        ServiceInstanceEntity entity = ServiceInstanceEntity.findById(id);
-        if (entity == null) {
+        Optional<ServiceInstanceDto> found = records.findById(id);
+        if (found.isEmpty()) {
             return Optional.empty();
         }
-        ServiceInstanceDto current = syncOperation(toDto(entity));
+        ServiceInstanceDto current = syncOperation(found.get());
         if (isFullyDeprovisioned(current)) {
-            ServiceInstanceEntity.deleteById(id);
+            records.delete(id);
             return Optional.of(current);
         }
         if ("deleting".equalsIgnoreCase(current.state())
@@ -166,7 +166,7 @@ public class AdminStore {
                 "in progress",
                 "Starting deprovision workflow",
                 "DEPROVISION");
-        persist(deleting);
+        records.save(deleting);
 
         String operationId;
         try {
@@ -183,7 +183,7 @@ public class AdminStore {
                     "failed",
                     "Deprovision workflow failed to start: " + ex.getMessage(),
                     "DEPROVISION");
-            persist(failed);
+            records.save(failed);
             return Optional.of(failed);
         }
 
@@ -194,7 +194,7 @@ public class AdminStore {
                 "in progress",
                 "Deprovision workflow started",
                 "DEPROVISION");
-        persist(withOp);
+        records.save(withOp);
         return Optional.of(syncOperation(withOp));
     }
 
@@ -227,7 +227,7 @@ public class AdminStore {
                             "succeeded",
                             "Deprovision completed",
                             "DEPROVISION");
-                    persist(done);
+                    records.save(done);
                     yield done;
                 }
                 ServiceInstanceDto done = withOperation(
@@ -238,7 +238,7 @@ public class AdminStore {
                         "Provision completed",
                         "PROVISION");
                 done = withDashboardUrl(done, provisioningWorkflow.dashboardUrl(operationId));
-                persist(done);
+                records.save(done);
                 yield done;
             }
             case FAILED -> {
@@ -249,44 +249,10 @@ public class AdminStore {
                         "failed",
                         "Workflow failed",
                         instance.lastOperationKind());
-                persist(failed);
+                records.save(failed);
                 yield failed;
             }
         };
-    }
-
-    private void persist(ServiceInstanceDto dto) {
-        ServiceInstanceEntity entity = ServiceInstanceEntity.findById(dto.id());
-        if (entity == null) {
-            entity = new ServiceInstanceEntity();
-            entity.id = dto.id();
-            entity.persist();
-        }
-        entity.serviceId = dto.serviceId();
-        entity.planId = dto.planId();
-        entity.state = dto.state();
-        entity.platformClientId = dto.platformClientId();
-        entity.dashboardUrl = dto.dashboardUrl();
-        entity.parameters = new LinkedHashMap<>(copyParameters(dto.parameters()));
-        entity.lastOperationId = dto.lastOperationId();
-        entity.lastOperationState = dto.lastOperationState();
-        entity.lastOperationDescription = dto.lastOperationDescription();
-        entity.lastOperationKind = dto.lastOperationKind();
-    }
-
-    private static ServiceInstanceDto toDto(ServiceInstanceEntity entity) {
-        return new ServiceInstanceDto(
-                entity.id,
-                entity.serviceId,
-                entity.planId,
-                entity.state,
-                entity.platformClientId,
-                entity.dashboardUrl,
-                copyParameters(entity.parameters),
-                entity.lastOperationId,
-                entity.lastOperationState,
-                entity.lastOperationDescription,
-                entity.lastOperationKind);
     }
 
     private static ServiceInstanceDto withDashboardUrl(ServiceInstanceDto base, String dashboardUrl) {

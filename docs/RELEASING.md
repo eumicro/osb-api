@@ -106,7 +106,7 @@ Repository rulesets (Settings → Rules → Rulesets):
 
 | Ruleset | Applies to | Enforces |
 | --- | --- | --- |
-| **Protect main** | default branch | PR required, CI `osb-api` + `osb-bff` must pass (branch up to date), no force-push, no delete; open review threads must be resolved. Admins may bypass only when merging a PR. |
+| **Protect main** | default branch | PR required; CI `mvn test` (workflow **CI**) plus container image jobs `osb-api` + `osb-bff` must pass (branch up to date); no force-push, no delete; open review threads must be resolved. Admins may bypass only when merging a PR. |
 | **Protect release tags** | `v*` | no delete / retarget / force-update (admins may bypass) |
 
 Direct pushes to `main` are blocked; changes go through pull requests.
