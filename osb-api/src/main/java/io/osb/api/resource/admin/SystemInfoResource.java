@@ -27,6 +27,7 @@ public class SystemInfoResource {
     private final OsbServicesConfig.Postgres postgres;
     private final OsbServicesConfig.Keycloak keycloak;
     private final String n8nBaseUrl;
+    private final String applicationVersion;
 
     public SystemInfoResource(
             GitClientPort gitClientPort,
@@ -36,7 +37,8 @@ public class SystemInfoResource {
             DeprovisioningWorkflow deprovisioningWorkflow,
             OsbServicesConfig.Postgres postgres,
             OsbServicesConfig.Keycloak keycloak,
-            @ConfigProperty(name = "osb.n8n.base-url") String n8nBaseUrl) {
+            @ConfigProperty(name = "osb.n8n.base-url") String n8nBaseUrl,
+            @ConfigProperty(name = "quarkus.application.version") String applicationVersion) {
         this.gitClientPort = gitClientPort;
         this.kubernetesClientPort = kubernetesClientPort;
         this.httpClientNetworkPort = httpClientNetworkPort;
@@ -45,6 +47,7 @@ public class SystemInfoResource {
         this.postgres = postgres;
         this.keycloak = keycloak;
         this.n8nBaseUrl = n8nBaseUrl;
+        this.applicationVersion = applicationVersion;
     }
 
     @GET
@@ -64,8 +67,8 @@ public class SystemInfoResource {
 
         return new SystemInfoResponse(
                 "OSB-API",
-                "0.1.0-SNAPSHOT",
-                "skeleton-ready",
+                applicationVersion,
+                "ready",
                 adapters,
                 services);
     }
