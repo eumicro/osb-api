@@ -62,6 +62,7 @@
         <quinoa.version>2.6.1</quinoa.version>
         <compiler-plugin.version>3.14.0</compiler-plugin.version>
         <surefire-plugin.version>3.5.3</surefire-plugin.version>
+        <archunit.version>1.4.1</archunit.version>
         <skipITs>true</skipITs>
     </properties>
 
@@ -118,6 +119,11 @@
                 <groupId>io.osb</groupId>
                 <artifactId>osb-infrastructure-secrets</artifactId>
                 <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.tngtech.archunit</groupId>
+                <artifactId>archunit-junit5</artifactId>
+                <version>${archunit.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

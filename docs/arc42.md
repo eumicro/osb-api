@@ -583,12 +583,13 @@ GroupId/Package-Namespace sind **TBD**.
 - [ ] Callback- vs. Poll-Modell für n8n  
 - [x] Secret-Handling für Git/HTTP/K8s/Platform-Client-Credentials (`SecretStore` + OpenBao; Bindings Follow-up)  
 - [ ] Package-/Repo-Struktur Frontend Monorepo vs. getrennt  
-- [ ] CI-Gates: ArchUnit, Spec-Contract-Tests  
+- [x] CI-Gates: ArchUnit (`ArchitectureTest`) + Catalog Contract Smoke (`CatalogContractSmokeTest`)  
 
 ## Anhang C — Dokumenthistorie
 
 | Version | Datum | Änderung |
 | --- | --- | --- |
+| 0.1.9 | 2026-10-10 | ArchUnit dependency gates (`ArchitectureTest`) |
 | 0.1.8 | 2026-10-10 | OSB Service Bindings (`BindingStore` + Flyway V20) |
 | 0.1.7 | 2026-10-10 | OSB `PATCH` Instance Update (`UpdatingWorkflow` / n8n `UPDATE`) |
 | 0.1.2 | 2026-07-27 | Platform Basic Auth + SecretStore, OSB `/v2/service_instances`, Catalog-Scoping |
