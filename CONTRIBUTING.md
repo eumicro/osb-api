@@ -15,9 +15,14 @@ cp -n osb-devservices/.env.example osb-devservices/.env
 Build and typecheck:
 
 ```bash
-./mvnw -DskipTests package
+./mvnw test
+./mvnw -DskipTests package   # optional local image/package step after tests
 cd frontend && npm ci && npm run typecheck
 ```
+
+CI runs `./mvnw -B test` on every PR (`CI` workflow) including catalog contract smoke
+(`CatalogContractSmokeTest`: missing/invalid Basic → 401 mapping, valid client → assigned offerings).
+Container image builds may still use `-DskipTests` because the verify job is required separately.
 
 More detail: [README.md](./README.md) (Quick start / Manual start) and [osb-devservices/README.md](./osb-devservices/README.md).
 
@@ -26,7 +31,7 @@ More detail: [README.md](./README.md) (Quick start / Manual start) and [osb-devs
 1. Fork the repo and create a branch from `main`.
 2. Keep changes focused; follow the module layout (domain inward; adapters do not leak into `osb/`).
 3. Prefer Conventional Commits (`feat`, `fix`, `docs`, `chore`, …) — releases are driven by [Release Please](./docs/RELEASING.md).
-4. Run `./mvnw -DskipTests package` and, for UI changes, `npm run typecheck` in `frontend/` before opening a PR.
+4. Run `./mvnw test` and, for UI changes, `npm run typecheck` in `frontend/` before opening a PR.
 5. Open a PR against `main` and describe **why** the change is needed.
 
 ## Modules

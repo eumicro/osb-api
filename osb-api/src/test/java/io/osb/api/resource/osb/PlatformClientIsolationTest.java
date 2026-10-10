@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.osb.api.admin.AdminStore;
+import io.osb.api.admin.MapServiceInstanceRecordStore;
 import io.osb.api.dto.osb.CatalogResponse;
 import io.osb.api.dto.osb.ProvisionServiceInstanceRequest;
 import io.osb.api.mapper.CatalogMapper;
@@ -85,7 +86,10 @@ class PlatformClientIsolationTest {
             throw new io.osb.auth.PlatformAuthenticationException("unauthorized");
         };
 
-        adminStore = new AdminStore(new StubProvisioningWorkflow(), new StubDeprovisioningWorkflow());
+        adminStore = new AdminStore(
+                new StubProvisioningWorkflow(),
+                new StubDeprovisioningWorkflow(),
+                new MapServiceInstanceRecordStore());
         CatalogMapper mapper = new CatalogMapper();
         GetCatalogForPlatformUseCase getCatalog =
                 new GetCatalogForPlatformUseCase(platforms, catalogs);
